@@ -207,13 +207,6 @@ class _HomePageState extends State<HomePage> {
                         controller: _receivedDateController,
                         decoration: const InputDecoration(
                             hintText: "Qabul qilingan sana"),
-                        validator: (v) {
-                          if (v!.isEmpty) {
-                            return "Bo'sh qoldirmang";
-                          } else {
-                            return null;
-                          }
-                        },
                       ),
                       TextFormField(
                         autovalidateMode: AutovalidateMode.onUserInteraction,
@@ -224,15 +217,6 @@ class _HomePageState extends State<HomePage> {
                         controller: _phoneController,
                         decoration:
                             const InputDecoration(hintText: "Telefon raqami"),
-                        validator: (v) {
-                          if (v!.isEmpty) {
-                            return "Bo'sh qoldirmang";
-                          } else if (v.trim().length < 13) {
-                            return "To'g'ri telefon kiriting";
-                          } else {
-                            return null;
-                          }
-                        },
                       ),
                       Gap(10.h),
                       StatefulBuilder(builder: (context, setState) {

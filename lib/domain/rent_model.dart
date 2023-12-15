@@ -10,7 +10,7 @@ class RentModel {
   final String? given_date;
   final String? received_date;
   final String? phone_number;
-  final bool? is_delivered;
+  bool? is_delivered;
   final String? created_at;
   final String? updated_at;
   RentModel({
