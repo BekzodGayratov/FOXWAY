@@ -1,31 +1,32 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
 
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+
 class PostRentModel {
-  final String tenantName;
-  final String productType;
-  final String price;
-  final String paidDept;
-  final String givenDate;
-  final String receivedDate;
-  final String phoneNumber;
-  final bool isDelivered;
+  final String? tenantName;
+  final String? productType;
+  final PostPrice? price;
+  final PostPrice? paidDept;
+  final String? givenDate;
+  final String? receivedDate;
+  final String? phoneNumber;
+  final bool? isDelivered;
   PostRentModel({
-    required this.tenantName,
-    required this.productType,
-    required this.price,
-    required this.paidDept,
-    required this.givenDate,
-    required this.receivedDate,
-    required this.phoneNumber,
-    required this.isDelivered,
+    this.tenantName,
+    this.productType,
+    this.price,
+    this.paidDept,
+    this.givenDate,
+    this.receivedDate,
+    this.phoneNumber,
+    this.isDelivered,
   });
 
   PostRentModel copyWith({
     String? tenantName,
     String? productType,
-    String? price,
-    String? paidDept,
+    PostPrice? price,
+    PostPrice? paidDept,
     String? givenDate,
     String? receivedDate,
     String? phoneNumber,
@@ -47,8 +48,8 @@ class PostRentModel {
     return <String, dynamic>{
       'tenantName': tenantName,
       'productType': productType,
-      'price': price,
-      'paidDept': paidDept,
+      'price': price?.toMap(),
+      'paidDept': paidDept?.toMap(),
       'givenDate': givenDate,
       'receivedDate': receivedDate,
       'phoneNumber': phoneNumber,
@@ -58,14 +59,14 @@ class PostRentModel {
 
   factory PostRentModel.fromMap(Map<String, dynamic> map) {
     return PostRentModel(
-      tenantName: map['tenantName'] as String,
-      productType: map['productType'] as String,
-      price: map['price'] as String,
-      paidDept: map['paidDept'] as String,
-      givenDate: map['givenDate'] as String,
-      receivedDate: map['receivedDate'] as String,
-      phoneNumber: map['phoneNumber'] as String,
-      isDelivered: map['isDelivered'] as bool,
+      tenantName: map['tenantName'] != null ? map['tenantName'] as String : null,
+      productType: map['productType'] != null ? map['productType'] as String : null,
+      price: map['price'] != null ? PostPrice.fromMap(map['price'] as Map<String,dynamic>) : null,
+      paidDept: map['paidDept'] != null ? PostPrice.fromMap(map['paidDept'] as Map<String,dynamic>) : null,
+      givenDate: map['givenDate'] != null ? map['givenDate'] as String : null,
+      receivedDate: map['receivedDate'] != null ? map['receivedDate'] as String : null,
+      phoneNumber: map['phoneNumber'] != null ? map['phoneNumber'] as String : null,
+      isDelivered: map['isDelivered'] != null ? map['isDelivered'] as bool : null,
     );
   }
 
@@ -104,4 +105,44 @@ class PostRentModel {
       phoneNumber.hashCode ^
       isDelivered.hashCode;
   }
+}
+
+class PostPrice {
+  final String? currency;
+  final num? sum;
+  PostPrice({
+    this.currency,
+    this.sum,
+  });
+
+  PostPrice copyWith({
+    String? currency,
+    num? sum,
+  }) {
+    return PostPrice(
+      currency: currency ?? this.currency,
+      sum: sum ?? this.sum,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'currency': currency,
+      'sum': sum,
+    };
+  }
+
+  factory PostPrice.fromMap(Map<String, dynamic> map) {
+    return PostPrice(
+      currency: map['currency'] != null ? map['currency'] as String : null,
+      sum: map['sum'] != null ? map['sum'] as num : null,
+    );
+  }
+
+  String toJson() => json.encode(toMap());
+
+  factory PostPrice.fromJson(String source) => PostPrice.fromMap(json.decode(source) as Map<String, dynamic>);
+
+  @override
+  String toString() => 'PostPrice(currency: $currency, sum: $sum)';
 }

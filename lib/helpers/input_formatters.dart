@@ -14,6 +14,9 @@ class FoxTextInputFormatter {
       MaskTextInputFormatter(mask: "# # # # # ");
   static MaskTextInputFormatter birthDateFormatter = MaskTextInputFormatter(
       mask: '##/##/####', type: MaskAutoCompletionType.lazy);
+
+  static MaskTextInputFormatter dateFormatter = MaskTextInputFormatter(
+      mask: '####-##-##', type: MaskAutoCompletionType.lazy);
 }
 
 class NumericTextFormatter extends TextInputFormatter {

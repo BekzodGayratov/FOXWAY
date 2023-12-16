@@ -5,6 +5,8 @@ import 'package:accountant/presentation/widgets/loading.dart';
 import 'package:accountant/presentation/widgets/padding.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:gap/gap.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -40,9 +42,16 @@ class _LoginPageState extends State<LoginPage> {
         return Scaffold(
             appBar: AppBar(title: const Text("Tizimga kirish")),
             body: Column(
+              mainAxisSize: MainAxisSize.max,
               crossAxisAlignment: CrossAxisAlignment.center,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                SizedBox(
+                  height: 150.0,
+                  width: 150.w,
+                  child: Image.asset("assets/logo.png"),
+                ),
+                Gap(60.h),
                 FoxWayPadding(
                   child: TextFormField(
                     keyboardType: TextInputType.emailAddress,

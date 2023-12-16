@@ -7,19 +7,19 @@ class RentsFireStoreService {
       FirebaseFirestore.instance.collection("rents");
 
   ///
-  Future<void> writeData(PostRentModel rentModel) async {
+  Future<void> writeRent(PostRentModel rentModel) async {
     try {
       await rentsCollection.add({
         "tenant_name": rentModel.tenantName,
         "product_type": rentModel.productType,
-        "price": rentModel.price,
-        "paid_dept": rentModel.paidDept,
-        "give_date": rentModel.givenDate,
+        "price": rentModel.price!.toMap(),
+        "paid_dept": rentModel.paidDept!.toMap(),
+        "given_date": rentModel.givenDate,
         "received_date": rentModel.receivedDate,
         "phone_number": rentModel.phoneNumber,
         "is_delivered": rentModel.isDelivered,
-        "created_at": Timestamp.now().toDate().toLocal().toString(),
-        "updated_at": Timestamp.now().toDate().toLocal().toString()
+        "created_at": DateTime.now().toLocal().toString(),
+        "updated_at": DateTime.now().toLocal().toString()
       });
     } on FirebaseException catch (e) {
       showFoxMessage(e.message.toString());
@@ -27,19 +27,21 @@ class RentsFireStoreService {
   }
 
   ///
-  Future<bool> updateData(
-      {required String id, required PostRentModel rentModel}) async {
+  Future<bool> updateRent(
+      {required String id,
+      required PostRentModel rentModel,
+      required String createdAt}) async {
     try {
       await rentsCollection.doc(id).update({
-        "tenant_ame": rentModel.tenantName,
+        "tenant_name": rentModel.tenantName,
         "product_type": rentModel.productType,
-        "price": rentModel.price,
-        "paid_dept": rentModel.paidDept,
-        "give_date": rentModel.givenDate,
-        "received_date": rentModel.receivedDate,
+        "price": rentModel.price!.toMap(),
+        "paid_dept": rentModel.paidDept!.toMap(),
+        "given_date": rentModel.givenDate,
+        "received_date": rentModel.receivedDate.toString(),
         "phone_number": rentModel.phoneNumber,
         "is_delivered": rentModel.isDelivered,
-        "created_at": Timestamp.now().toDate().toLocal().toString(),
+        "created_at": createdAt,
         "updated_at": Timestamp.now().toDate().toLocal().toString()
       });
       return true;
@@ -51,7 +53,19 @@ class RentsFireStoreService {
 
   ///
 
-  Future<void> deleteData(String id) async {
+  Future<QuerySnapshot<Map<String, dynamic>>?> getRentWithId(String id) async {
+    try {
+      return await rentsCollection.doc(id).get()
+          as QuerySnapshot<Map<String, dynamic>>;
+    } on FirebaseException catch (e) {
+      showFoxMessage(e.message.toString());
+      return null;
+    }
+  }
+
+  ///
+
+  Future<void> deleteRent(String id) async {
     await rentsCollection.doc(id).delete();
   }
 }
