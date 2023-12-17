@@ -32,9 +32,8 @@ class _HomePageState extends State<HomePage> {
   late final TextEditingController _priceController;
   late final TextEditingController _paidDebtController;
   late final TextEditingController _givenDateController;
-  late final TextEditingController _receivedDateController;
+
   late final TextEditingController _phoneController;
-  late bool _isDelivered;
 
   ///
   String title = "Foxway";
@@ -58,12 +57,11 @@ class _HomePageState extends State<HomePage> {
       title = "Foxway xodimi";
     }
 
-    _isDelivered = false;
     _tenantNameController = TextEditingController();
     _productTypeController = TextEditingController();
     _priceController = TextEditingController();
     _givenDateController = TextEditingController();
-    _receivedDateController = TextEditingController();
+
     _phoneController = TextEditingController();
     _paidDebtController = TextEditingController();
 
@@ -81,7 +79,6 @@ class _HomePageState extends State<HomePage> {
     _productTypeController.dispose();
     _priceController.dispose();
     _givenDateController.dispose();
-    _receivedDateController.dispose();
     _phoneController.dispose();
     _tenantNameController.dispose();
 
@@ -265,7 +262,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<dynamic> _showAddRentDialog(BuildContext context) {
-    _isDelivered = false;
     return showDialog(
         context: context,
         builder: (context) {
@@ -282,10 +278,10 @@ class _HomePageState extends State<HomePage> {
                       _productTypeController.clear();
                       _priceController.clear();
                       _givenDateController.clear();
-                      _receivedDateController.clear();
+
                       _phoneController.clear();
                       _tenantNameController.clear();
-                      _isDelivered = false;
+
                       Navigator.pop(context);
                     },
                     icon: const Icon(Icons.cancel_outlined))
@@ -305,7 +301,7 @@ class _HomePageState extends State<HomePage> {
                           autovalidateMode: AutovalidateMode.onUserInteraction,
                           controller: _tenantNameController,
                           decoration:
-                              const InputDecoration(hintText: "Ijarachi ismi"),
+                              const InputDecoration(hintText: "Mijoz ismi"),
                           validator: (v) {
                             if (v!.isEmpty) {
                               return "Bo'sh qoldirmang";
@@ -400,8 +396,14 @@ class _HomePageState extends State<HomePage> {
                           },
                         ),
                         TextFormField(
+                          inputFormatters: [
+                            FoxTextInputFormatter.birthDateFormatter
+                          ],
                           autovalidateMode: AutovalidateMode.onUserInteraction,
                           onTap: () {
+                            _givenDateController.text =
+                                DateFormat('yyyy-MM-dd').format(DateTime.now());
+                            setState(() {});
                             showFoxDatePicker(context, (dateTime) {
                               setState(() {
                                 _givenDateController.text =
@@ -422,20 +424,6 @@ class _HomePageState extends State<HomePage> {
                         ),
                         TextFormField(
                           autovalidateMode: AutovalidateMode.onUserInteraction,
-                          onTap: () {
-                            showFoxDatePicker(context, (dateTime) {
-                              setState(() {
-                                _receivedDateController.text =
-                                    DateFormat('yyyy-MM-dd').format(dateTime);
-                              });
-                            });
-                          },
-                          controller: _receivedDateController,
-                          decoration: const InputDecoration(
-                              hintText: "Qabul qilingan sana"),
-                        ),
-                        TextFormField(
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
                           keyboardType: TextInputType.phone,
                           inputFormatters: [
                             FoxTextInputFormatter.phoneNumberFormatter
@@ -445,15 +433,6 @@ class _HomePageState extends State<HomePage> {
                               const InputDecoration(hintText: "Telefon raqami"),
                         ),
                         Gap(10.h),
-                        CheckboxListTile.adaptive(
-                            title: const Text("Yetkazib berilgan"),
-                            controlAffinity: ListTileControlAffinity.leading,
-                            value: _isDelivered,
-                            onChanged: (v) {
-                              setState(() {
-                                _isDelivered = v as bool;
-                              });
-                            }),
                       ],
                     );
                   }),
@@ -465,30 +444,29 @@ class _HomePageState extends State<HomePage> {
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       context.read<RentCubit>().postRent(PostRentModel(
-                          tenantName: _tenantNameController.text,
-                          productType: _productTypeController.text,
-                          price: PostPrice(
-                              currency: _currency,
-                              sum: num.tryParse(_priceController.text
-                                      .pickOnlyNumbers()) ??
-                                  0.0),
-                          paidDept: PostPrice(
-                              currency: _currency,
-                              sum: num.tryParse(_paidDebtController.text
-                                      .pickOnlyNumbers()) ??
-                                  0.0),
-                          givenDate: _givenDateController.text,
-                          receivedDate: _receivedDateController.text,
-                          phoneNumber: _phoneController.text,
-                          isDelivered: _isDelivered));
+                            tenantName: _tenantNameController.text,
+                            productType: _productTypeController.text,
+                            price: PostPrice(
+                                currency: _currency,
+                                sum: num.tryParse(_priceController.text
+                                        .pickOnlyNumbers()) ??
+                                    0.0),
+                            paidDept: PostPrice(
+                                currency: _currency,
+                                sum: num.tryParse(_paidDebtController.text
+                                        .pickOnlyNumbers()) ??
+                                    0.0),
+                            givenDate: _givenDateController.text,
+                            phoneNumber: _phoneController.text,
+                          ));
 
                       _productTypeController.clear();
                       _priceController.clear();
                       _givenDateController.clear();
-                      _receivedDateController.clear();
+
                       _phoneController.clear();
                       _tenantNameController.clear();
-                      _isDelivered = false;
+
                       Navigator.of(context).pop();
                     }
                   },

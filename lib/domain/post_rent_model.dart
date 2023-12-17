@@ -8,19 +8,17 @@ class PostRentModel {
   final PostPrice? price;
   final PostPrice? paidDept;
   final String? givenDate;
-  final String? receivedDate;
+
   final String? phoneNumber;
-  final bool? isDelivered;
   PostRentModel({
     this.tenantName,
     this.productType,
     this.price,
     this.paidDept,
     this.givenDate,
-    this.receivedDate,
     this.phoneNumber,
-    this.isDelivered,
   });
+  
 
   PostRentModel copyWith({
     String? tenantName,
@@ -28,9 +26,7 @@ class PostRentModel {
     PostPrice? price,
     PostPrice? paidDept,
     String? givenDate,
-    String? receivedDate,
     String? phoneNumber,
-    bool? isDelivered,
   }) {
     return PostRentModel(
       tenantName: tenantName ?? this.tenantName,
@@ -38,9 +34,7 @@ class PostRentModel {
       price: price ?? this.price,
       paidDept: paidDept ?? this.paidDept,
       givenDate: givenDate ?? this.givenDate,
-      receivedDate: receivedDate ?? this.receivedDate,
       phoneNumber: phoneNumber ?? this.phoneNumber,
-      isDelivered: isDelivered ?? this.isDelivered,
     );
   }
 
@@ -51,9 +45,7 @@ class PostRentModel {
       'price': price?.toMap(),
       'paidDept': paidDept?.toMap(),
       'givenDate': givenDate,
-      'receivedDate': receivedDate,
       'phoneNumber': phoneNumber,
-      'isDelivered': isDelivered,
     };
   }
 
@@ -64,9 +56,7 @@ class PostRentModel {
       price: map['price'] != null ? PostPrice.fromMap(map['price'] as Map<String,dynamic>) : null,
       paidDept: map['paidDept'] != null ? PostPrice.fromMap(map['paidDept'] as Map<String,dynamic>) : null,
       givenDate: map['givenDate'] != null ? map['givenDate'] as String : null,
-      receivedDate: map['receivedDate'] != null ? map['receivedDate'] as String : null,
       phoneNumber: map['phoneNumber'] != null ? map['phoneNumber'] as String : null,
-      isDelivered: map['isDelivered'] != null ? map['isDelivered'] as bool : null,
     );
   }
 
@@ -76,7 +66,7 @@ class PostRentModel {
 
   @override
   String toString() {
-    return 'PostRentModel(tenantName: $tenantName, productType: $productType, price: $price, paidDept: $paidDept, givenDate: $givenDate, receivedDate: $receivedDate, phoneNumber: $phoneNumber, isDelivered: $isDelivered)';
+    return 'PostRentModel(tenantName: $tenantName, productType: $productType, price: $price, paidDept: $paidDept, givenDate: $givenDate, phoneNumber: $phoneNumber)';
   }
 
   @override
@@ -89,9 +79,7 @@ class PostRentModel {
       other.price == price &&
       other.paidDept == paidDept &&
       other.givenDate == givenDate &&
-      other.receivedDate == receivedDate &&
-      other.phoneNumber == phoneNumber &&
-      other.isDelivered == isDelivered;
+      other.phoneNumber == phoneNumber;
   }
 
   @override
@@ -101,9 +89,7 @@ class PostRentModel {
       price.hashCode ^
       paidDept.hashCode ^
       givenDate.hashCode ^
-      receivedDate.hashCode ^
-      phoneNumber.hashCode ^
-      isDelivered.hashCode;
+      phoneNumber.hashCode;
   }
 }
 

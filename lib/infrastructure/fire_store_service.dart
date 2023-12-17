@@ -15,9 +15,8 @@ class RentsFireStoreService {
         "price": rentModel.price!.toMap(),
         "paid_dept": rentModel.paidDept!.toMap(),
         "given_date": rentModel.givenDate,
-        "received_date": rentModel.receivedDate,
+      
         "phone_number": rentModel.phoneNumber,
-        "is_delivered": rentModel.isDelivered,
         "created_at": DateTime.now().toLocal().toString(),
         "updated_at": DateTime.now().toLocal().toString()
       });
@@ -38,9 +37,8 @@ class RentsFireStoreService {
         "price": rentModel.price!.toMap(),
         "paid_dept": rentModel.paidDept!.toMap(),
         "given_date": rentModel.givenDate,
-        "received_date": rentModel.receivedDate.toString(),
+        
         "phone_number": rentModel.phoneNumber,
-        "is_delivered": rentModel.isDelivered,
         "created_at": createdAt,
         "updated_at": Timestamp.now().toDate().toLocal().toString()
       });

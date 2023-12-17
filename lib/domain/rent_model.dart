@@ -8,9 +8,8 @@ class RentModel {
   final RentPrice? price;
   final RentPrice? paid_dept;
   final String? given_date;
-  final String? received_date;
+
   final String? phone_number;
-  bool? is_delivered;
   final String? created_at;
   final String? updated_at;
   RentModel({
@@ -20,12 +19,11 @@ class RentModel {
     this.price,
     this.paid_dept,
     this.given_date,
-    this.received_date,
     this.phone_number,
-    this.is_delivered,
     this.created_at,
     this.updated_at,
   });
+  
 
   RentModel copyWith({
     String? id,
@@ -34,9 +32,7 @@ class RentModel {
     RentPrice? price,
     RentPrice? paid_dept,
     String? given_date,
-    String? received_date,
     String? phone_number,
-    bool? is_delivered,
     String? created_at,
     String? updated_at,
   }) {
@@ -47,9 +43,7 @@ class RentModel {
       price: price ?? this.price,
       paid_dept: paid_dept ?? this.paid_dept,
       given_date: given_date ?? this.given_date,
-      received_date: received_date ?? this.received_date,
       phone_number: phone_number ?? this.phone_number,
-      is_delivered: is_delivered ?? this.is_delivered,
       created_at: created_at ?? this.created_at,
       updated_at: updated_at ?? this.updated_at,
     );
@@ -63,9 +57,7 @@ class RentModel {
       'price': price?.toMap(),
       'paid_dept': paid_dept?.toMap(),
       'given_date': given_date,
-      'received_date': received_date,
       'phone_number': phone_number,
-      'is_delivered': is_delivered,
       'created_at': created_at,
       'updated_at': updated_at,
     };
@@ -79,9 +71,7 @@ class RentModel {
       price: map['price'] != null ? RentPrice.fromMap(map['price'] as Map<String,dynamic>) : null,
       paid_dept: map['paid_dept'] != null ? RentPrice.fromMap(map['paid_dept'] as Map<String,dynamic>) : null,
       given_date: map['given_date'] != null ? map['given_date'] as String : null,
-      received_date: map['received_date'] != null ? map['received_date'] as String : null,
       phone_number: map['phone_number'] != null ? map['phone_number'] as String : null,
-      is_delivered: map['is_delivered'] != null ? map['is_delivered'] as bool : null,
       created_at: map['created_at'] != null ? map['created_at'] as String : null,
       updated_at: map['updated_at'] != null ? map['updated_at'] as String : null,
     );
@@ -93,7 +83,7 @@ class RentModel {
 
   @override
   String toString() {
-    return 'RentModel(id: $id, tenant_name: $tenant_name, product_type: $product_type, price: $price, paid_dept: $paid_dept, given_date: $given_date, received_date: $received_date, phone_number: $phone_number, is_delivered: $is_delivered, created_at: $created_at, updated_at: $updated_at)';
+    return 'RentModel(id: $id, tenant_name: $tenant_name, product_type: $product_type, price: $price, paid_dept: $paid_dept, given_date: $given_date, phone_number: $phone_number, created_at: $created_at, updated_at: $updated_at)';
   }
 
   @override
@@ -107,9 +97,7 @@ class RentModel {
       other.price == price &&
       other.paid_dept == paid_dept &&
       other.given_date == given_date &&
-      other.received_date == received_date &&
       other.phone_number == phone_number &&
-      other.is_delivered == is_delivered &&
       other.created_at == created_at &&
       other.updated_at == updated_at;
   }
@@ -122,9 +110,7 @@ class RentModel {
       price.hashCode ^
       paid_dept.hashCode ^
       given_date.hashCode ^
-      received_date.hashCode ^
       phone_number.hashCode ^
-      is_delivered.hashCode ^
       created_at.hashCode ^
       updated_at.hashCode;
   }
