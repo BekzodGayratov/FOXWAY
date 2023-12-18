@@ -1,6 +1,6 @@
 import 'package:accountant/application/rent/rent_cubit.dart';
 import 'package:accountant/domain/foxway_credentials.dart';
-import 'package:accountant/domain/post_rent_model.dart';
+import 'package:accountant/domain/post_client_model.dart';
 import 'package:accountant/helpers/date_picker.dart';
 import 'package:accountant/helpers/input_formatters.dart';
 import 'package:accountant/presentation/extension/ext.dart';
@@ -23,7 +23,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late RentCubit _cubit;
+  late ProductCubit _cubit;
 
   //CONTROLLERS
   final _formKey = GlobalKey<FormState>();
@@ -70,7 +70,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void didChangeDependencies() {
-    _cubit = BlocProvider.of<RentCubit>(context);
+    _cubit = BlocProvider.of<ProductCubit>(context);
     super.didChangeDependencies();
   }
 
@@ -91,7 +91,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<RentCubit, RentState>(
+    return BlocBuilder<ProductCubit, ProductState>(
       builder: (context, state) {
         return Scaffold(
           appBar: AppBar(
@@ -179,7 +179,7 @@ class _HomePageState extends State<HomePage> {
                                                         color: Colors.white),
                                                   ),
                                                   Text(
-                                                    " ${context.watch<RentCubit>().totalPriceSom.toString()} SO'M | ${context.watch<RentCubit>().totalPriceUsd.toString()} USD",
+                                                    " ${context.watch<ProductCubit>().totalPriceSom.toString()} SO'M | ${context.watch<ProductCubit>().totalPriceUsd.toString()} USD",
                                                     style: TextStyle(
                                                         fontSize: 20.0,
                                                         fontStyle:
@@ -206,7 +206,7 @@ class _HomePageState extends State<HomePage> {
                                                         color: Colors.white),
                                                   ),
                                                   Text(
-                                                    " ${context.watch<RentCubit>().totalPaidDeptSom.toString()} SO'M | ${context.watch<RentCubit>().totalPaidDeptUsd.toString()} USD",
+                                                    " ${context.watch<ProductCubit>().totalPaidDeptSom.toString()} SO'M | ${context.watch<ProductCubit>().totalPaidDeptUsd.toString()} USD",
                                                     style: TextStyle(
                                                         fontSize: 20.0,
                                                         fontStyle:
@@ -233,7 +233,7 @@ class _HomePageState extends State<HomePage> {
                                                         color: Colors.white),
                                                   ),
                                                   Text(
-                                                    " ${context.watch<RentCubit>().totalDeptSom.toString()} SO'M | ${context.watch<RentCubit>().totalDeptUsd.toString()} USD",
+                                                    " ${context.watch<ProductCubit>().totalDeptSom.toString()} SO'M | ${context.watch<ProductCubit>().totalDeptUsd.toString()} USD",
                                                     style: TextStyle(
                                                         fontSize: 20.0,
                                                         fontStyle:
@@ -443,21 +443,24 @@ class _HomePageState extends State<HomePage> {
               ElevatedButton(
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
-                      context.read<RentCubit>().postRent(PostRentModel(
-                            tenantName: _tenantNameController.text,
-                            productType: _productTypeController.text,
-                            price: PostPrice(
-                                currency: _currency,
-                                sum: num.tryParse(_priceController.text
-                                        .pickOnlyNumbers()) ??
-                                    0.0),
-                            paidDept: PostPrice(
-                                currency: _currency,
-                                sum: num.tryParse(_paidDebtController.text
-                                        .pickOnlyNumbers()) ??
-                                    0.0),
+                      context.read<ProductCubit>().postClient(PostClientModel(
+                            clientName: _tenantNameController.text,
+                            product: ProductModel(
+                              productType: _productTypeController.text,
+                              price: Price(
+                                  currency: _currency,
+                                  sum: num.tryParse(_priceController.text
+                                          .pickOnlyNumbers()) ??
+                                      0.0),
+                              paidMoney: Price(
+                                  currency: _currency,
+                                  sum: num.tryParse(_paidDebtController.text
+                                          .pickOnlyNumbers()) ??
+                                      0.0),
+                              givenDate: _givenDateController.text,
+                              phoneNumber: _phoneController.text,
+                            ),
                             givenDate: _givenDateController.text,
-                            phoneNumber: _phoneController.text,
                           ));
 
                       _productTypeController.clear();

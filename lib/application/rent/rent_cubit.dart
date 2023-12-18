@@ -1,7 +1,6 @@
 import 'dart:async';
-import 'package:accountant/domain/post_rent_model.dart';
-import 'package:accountant/domain/rent_model.dart';
-import 'package:accountant/helpers/show_message.dart';
+import 'package:accountant/domain/client_model.dart';
+import 'package:accountant/domain/post_client_model.dart';
 import 'package:accountant/infrastructure/fire_store_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -9,9 +8,9 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 part 'rent_state.dart';
 part 'rent_cubit.freezed.dart';
 
-class RentCubit extends Cubit<RentState> {
-  RentCubit() : super(const RentState.initial()) {
-    getRents();
+class ProductCubit extends Cubit<ProductState> {
+  ProductCubit() : super(const ProductState.initial()) {
+    getProducts();
   }
 
   //UZS
@@ -26,11 +25,11 @@ class RentCubit extends Cubit<RentState> {
   final RentsFireStoreService _rentsFireStoreService = RentsFireStoreService();
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? myStreamSubscription;
 
-  List<RentModel>? rents;
+  List<ClientModel>? clients;
 
   ///
-  Future<void> getRents() async {
-    emit(const RentState.loading());
+  Future<void> getProducts() async {
+    emit(const ProductState.loading());
 
     try {
       Stream<QuerySnapshot<Map<String, dynamic>>> rentSnapshot =
@@ -39,63 +38,65 @@ class RentCubit extends Cubit<RentState> {
               .snapshots() as Stream<QuerySnapshot<Map<String, dynamic>>>;
 
       myStreamSubscription = rentSnapshot.listen((event) async {
-        rents = event.docs.map((e) => RentModel.fromMap(e.data())).toList();
+        clients = event.docs.map((e) => ClientModel.fromMap(e.data())).toList();
         for (var i = 0; i < event.docs.length; i++) {
-          rents![i].id = event.docs[i].id;
+          clients![i].id = event.docs[i].id;
         }
 
-        if (rents!.isEmpty) {
-          emit(const RentState.empty());
+        if (clients!.isEmpty) {
+          emit(const ProductState.empty());
         } else {
-          calculateTotalPrice();
-          calculateTotalPaidDept();
-          calculateTotalDept();
+          // calculateTotalPrice();
+          // calculateTotalPaidDept();
+          // calculateTotalDept();
 
-          emit(RentState.success(rents!));
+          emit(ProductState.success(clients!));
         }
       });
     } on FirebaseException catch (e) {
-      emit(RentState.error(e.message.toString()));
+      emit(ProductState.error(e.message.toString()));
     }
   }
 
   ///
 
-  Future<void> postRent(PostRentModel rentModel) async {
-    await _rentsFireStoreService.writeRent(rentModel);
-    calculateTotalPrice();
-    calculateTotalPaidDept();
-    calculateTotalDept();
+  Future<void> postClient(PostClientModel rentModel) async {
+    await _rentsFireStoreService.writeClient(rentModel);
+    // calculateTotalPrice();
+    // calculateTotalPaidDept();
+    // calculateTotalDept();
   }
 
   ///
-  Future<void> updateRent(
+  Future<void> updateClient(
       {required String id,
-      required PostRentModel rentModel,
+      required PostClientModel rentModel,
       required String createdAt}) async {
-    await _rentsFireStoreService.updateRent(
-        id: id, rentModel: rentModel, createdAt: createdAt);
-    calculateTotalPrice();
-    calculateTotalPaidDept();
-    calculateTotalDept();
+    await _rentsFireStoreService.updateClient(
+        id: id, clientModel: rentModel, createdAt: createdAt);
+    // calculateTotalPrice();
+    // calculateTotalPaidDept();
+    // calculateTotalDept();
   }
 
   ///
-  Future<void> deleteRent({required String id}) async {
-    await _rentsFireStoreService.deleteRent(id);
-    calculateTotalPrice();
-    calculateTotalPaidDept();
-    calculateTotalDept();
+  Future<void> deleteClient({required String id}) async {
+    await _rentsFireStoreService.deleteClient(id);
+    // calculateTotalPrice();
+    // calculateTotalPaidDept();
+    // calculateTotalDept();
   }
 
   void calculateTotalDept() {
     totalDeptSom = 0.0;
     totalDeptUsd = 0.0;
-    for (var element in rents!) {
-      if (element.paid_dept!.currency == "sum") {
-        totalDeptSom += element.price!.sum! - element.paid_dept!.sum!;
-      } else {
-        totalDeptUsd += element.price!.sum! - element.paid_dept!.sum!;
+    for (var e in clients!) {
+      for (var element in e.products) {
+        if (element!.paid_money!.currency == "sum") {
+          totalDeptSom += element.price!.sum! - element.paid_money!.sum!;
+        } else {
+          totalDeptUsd += element.price!.sum! - element.paid_money!.sum!;
+        }
       }
     }
   }
@@ -103,11 +104,13 @@ class RentCubit extends Cubit<RentState> {
   void calculateTotalPaidDept() {
     totalPaidDeptSom = 0.0;
     totalPaidDeptUsd = 0.0;
-    for (var element in rents!) {
-      if (element.paid_dept!.currency == "sum") {
-        totalPaidDeptSom += element.paid_dept!.sum!;
-      } else {
-        totalPaidDeptUsd += element.paid_dept!.sum!;
+    for (var e in clients!) {
+      for (var element in e.products) {
+        if (element!.paid_money!.currency == "sum") {
+          totalPaidDeptSom += element.paid_money!.sum ?? 0.0;
+        } else {
+          totalPaidDeptUsd += element.paid_money!.sum ?? 0.0;
+        }
       }
     }
   }
@@ -115,12 +118,13 @@ class RentCubit extends Cubit<RentState> {
   void calculateTotalPrice() {
     totalPriceSom = 0.0;
     totalPriceUsd = 0.0;
-
-    for (var element in rents!) {
-      if (element.paid_dept!.currency == "sum") {
-        totalPriceSom += element.price!.sum!;
-      } else {
-        totalPriceUsd += element.price!.sum!;
+    for (var e in clients!) {
+      for (var element in e.products) {
+        if (element!.price!.currency == "sum") {
+          totalPriceSom += element.price!.sum ?? 0.0;
+        } else {
+          totalPriceUsd += element.price!.sum ?? 0.0;
+        }
       }
     }
   }

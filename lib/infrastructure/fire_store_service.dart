@@ -1,22 +1,30 @@
-import 'package:accountant/domain/post_rent_model.dart';
+import 'package:accountant/domain/post_client_model.dart';
 import 'package:accountant/helpers/show_message.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:uuid/uuid.dart';
 
 class RentsFireStoreService {
   final CollectionReference rentsCollection =
-      FirebaseFirestore.instance.collection("rents");
+      FirebaseFirestore.instance.collection("clients");
+
+  final uuid = const Uuid();
 
   ///
-  Future<void> writeRent(PostRentModel rentModel) async {
+  Future<void> writeClient(PostClientModel clientModel) async {
     try {
       await rentsCollection.add({
-        "tenant_name": rentModel.tenantName,
-        "product_type": rentModel.productType,
-        "price": rentModel.price!.toMap(),
-        "paid_dept": rentModel.paidDept!.toMap(),
-        "given_date": rentModel.givenDate,
-      
-        "phone_number": rentModel.phoneNumber,
+        "client_name": clientModel.clientName,
+        "products": [
+          {
+            "id": uuid.v4(),
+            "product_type": clientModel.product!.productType ?? "",
+            "price": clientModel.product!.price!.toMap(),
+            "paid_money": clientModel.product!.paidMoney!.toMap(),
+            "phone_number": clientModel.product!.phoneNumber ?? "",
+            "given_date": clientModel.product!.givenDate ?? "",
+          }
+        ],
+        "given_date": clientModel.givenDate,
         "created_at": DateTime.now().toLocal().toString(),
         "updated_at": DateTime.now().toLocal().toString()
       });
@@ -26,21 +34,26 @@ class RentsFireStoreService {
   }
 
   ///
-  Future<bool> updateRent(
+  Future<bool> updateClient(
       {required String id,
-      required PostRentModel rentModel,
+      required PostClientModel clientModel,
       required String createdAt}) async {
     try {
       await rentsCollection.doc(id).update({
-        "tenant_name": rentModel.tenantName,
-        "product_type": rentModel.productType,
-        "price": rentModel.price!.toMap(),
-        "paid_dept": rentModel.paidDept!.toMap(),
-        "given_date": rentModel.givenDate,
-        
-        "phone_number": rentModel.phoneNumber,
-        "created_at": createdAt,
-        "updated_at": Timestamp.now().toDate().toLocal().toString()
+        "tenant_name": clientModel.clientName,
+        "products": [
+          {
+            "id": uuid.v4(),
+            "product_type": clientModel.product!.productType ?? "",
+            "price": clientModel.product!.price!.toMap(),
+            "paid_money": clientModel.product!.paidMoney!.toMap(),
+            "phone_number": clientModel.product!.phoneNumber ?? "",
+            "given_date": clientModel.product!.givenDate ?? "",
+          }
+        ],
+        "given_date": clientModel.givenDate,
+        "created_at": DateTime.now().toLocal().toString(),
+        "updated_at": DateTime.now().toLocal().toString()
       });
       return true;
     } on FirebaseException catch (e) {
@@ -50,20 +63,12 @@ class RentsFireStoreService {
   }
 
   ///
-
-  Future<QuerySnapshot<Map<String, dynamic>>?> getRentWithId(String id) async {
-    try {
-      return await rentsCollection.doc(id).get()
-          as QuerySnapshot<Map<String, dynamic>>;
-    } on FirebaseException catch (e) {
-      showFoxMessage(e.message.toString());
-      return null;
-    }
+  Future<void> deleteClient(String clientId) async {
+    await rentsCollection.doc(clientId).delete();
   }
 
   ///
-
-  Future<void> deleteRent(String id) async {
-    await rentsCollection.doc(id).delete();
+  Future<void> deleteProduct(String priductId) async {
+    await rentsCollection.doc(priductId).delete();
   }
 }

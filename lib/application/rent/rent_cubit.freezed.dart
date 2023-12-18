@@ -15,14 +15,14 @@ final _privateConstructorUsedError = UnsupportedError(
     'It seems like you constructed your class using `MyClass._()`. This constructor is only meant to be used by freezed and you are not supposed to need it nor use it.\nPlease check the documentation here for more information: https://github.com/rrousselGit/freezed#custom-getters-and-methods');
 
 /// @nodoc
-mixin _$RentState {
+mixin _$ProductState {
   @optionalTypeArgs
   TResult when<TResult extends Object?>({
     required TResult Function() initial,
     required TResult Function() loading,
     required TResult Function() empty,
     required TResult Function(String err) error,
-    required TResult Function(List<RentModel> data) success,
+    required TResult Function(List<ClientModel> data) success,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -31,7 +31,7 @@ mixin _$RentState {
     TResult? Function()? loading,
     TResult? Function()? empty,
     TResult? Function(String err)? error,
-    TResult? Function(List<RentModel> data)? success,
+    TResult? Function(List<ClientModel> data)? success,
   }) =>
       throw _privateConstructorUsedError;
   @optionalTypeArgs
@@ -40,7 +40,7 @@ mixin _$RentState {
     TResult Function()? loading,
     TResult Function()? empty,
     TResult Function(String err)? error,
-    TResult Function(List<RentModel> data)? success,
+    TResult Function(List<ClientModel> data)? success,
     required TResult orElse(),
   }) =>
       throw _privateConstructorUsedError;
@@ -75,15 +75,16 @@ mixin _$RentState {
 }
 
 /// @nodoc
-abstract class $RentStateCopyWith<$Res> {
-  factory $RentStateCopyWith(RentState value, $Res Function(RentState) then) =
-      _$RentStateCopyWithImpl<$Res, RentState>;
+abstract class $ProductStateCopyWith<$Res> {
+  factory $ProductStateCopyWith(
+          ProductState value, $Res Function(ProductState) then) =
+      _$ProductStateCopyWithImpl<$Res, ProductState>;
 }
 
 /// @nodoc
-class _$RentStateCopyWithImpl<$Res, $Val extends RentState>
-    implements $RentStateCopyWith<$Res> {
-  _$RentStateCopyWithImpl(this._value, this._then);
+class _$ProductStateCopyWithImpl<$Res, $Val extends ProductState>
+    implements $ProductStateCopyWith<$Res> {
+  _$ProductStateCopyWithImpl(this._value, this._then);
 
   // ignore: unused_field
   final $Val _value;
@@ -100,7 +101,7 @@ abstract class _$$InitialImplCopyWith<$Res> {
 
 /// @nodoc
 class __$$InitialImplCopyWithImpl<$Res>
-    extends _$RentStateCopyWithImpl<$Res, _$InitialImpl>
+    extends _$ProductStateCopyWithImpl<$Res, _$InitialImpl>
     implements _$$InitialImplCopyWith<$Res> {
   __$$InitialImplCopyWithImpl(
       _$InitialImpl _value, $Res Function(_$InitialImpl) _then)
@@ -114,11 +115,11 @@ class _$InitialImpl implements _Initial {
 
   @override
   String toString() {
-    return 'RentState.initial()';
+    return 'ProductState.initial()';
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType && other is _$InitialImpl);
   }
@@ -133,7 +134,7 @@ class _$InitialImpl implements _Initial {
     required TResult Function() loading,
     required TResult Function() empty,
     required TResult Function(String err) error,
-    required TResult Function(List<RentModel> data) success,
+    required TResult Function(List<ClientModel> data) success,
   }) {
     return initial();
   }
@@ -145,7 +146,7 @@ class _$InitialImpl implements _Initial {
     TResult? Function()? loading,
     TResult? Function()? empty,
     TResult? Function(String err)? error,
-    TResult? Function(List<RentModel> data)? success,
+    TResult? Function(List<ClientModel> data)? success,
   }) {
     return initial?.call();
   }
@@ -157,7 +158,7 @@ class _$InitialImpl implements _Initial {
     TResult Function()? loading,
     TResult Function()? empty,
     TResult Function(String err)? error,
-    TResult Function(List<RentModel> data)? success,
+    TResult Function(List<ClientModel> data)? success,
     required TResult orElse(),
   }) {
     if (initial != null) {
@@ -207,7 +208,7 @@ class _$InitialImpl implements _Initial {
   }
 }
 
-abstract class _Initial implements RentState {
+abstract class _Initial implements ProductState {
   const factory _Initial() = _$InitialImpl;
 }
 
@@ -220,7 +221,7 @@ abstract class _$$LoadingImplCopyWith<$Res> {
 
 /// @nodoc
 class __$$LoadingImplCopyWithImpl<$Res>
-    extends _$RentStateCopyWithImpl<$Res, _$LoadingImpl>
+    extends _$ProductStateCopyWithImpl<$Res, _$LoadingImpl>
     implements _$$LoadingImplCopyWith<$Res> {
   __$$LoadingImplCopyWithImpl(
       _$LoadingImpl _value, $Res Function(_$LoadingImpl) _then)
@@ -234,11 +235,11 @@ class _$LoadingImpl implements _Loading {
 
   @override
   String toString() {
-    return 'RentState.loading()';
+    return 'ProductState.loading()';
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType && other is _$LoadingImpl);
   }
@@ -253,7 +254,7 @@ class _$LoadingImpl implements _Loading {
     required TResult Function() loading,
     required TResult Function() empty,
     required TResult Function(String err) error,
-    required TResult Function(List<RentModel> data) success,
+    required TResult Function(List<ClientModel> data) success,
   }) {
     return loading();
   }
@@ -265,7 +266,7 @@ class _$LoadingImpl implements _Loading {
     TResult? Function()? loading,
     TResult? Function()? empty,
     TResult? Function(String err)? error,
-    TResult? Function(List<RentModel> data)? success,
+    TResult? Function(List<ClientModel> data)? success,
   }) {
     return loading?.call();
   }
@@ -277,7 +278,7 @@ class _$LoadingImpl implements _Loading {
     TResult Function()? loading,
     TResult Function()? empty,
     TResult Function(String err)? error,
-    TResult Function(List<RentModel> data)? success,
+    TResult Function(List<ClientModel> data)? success,
     required TResult orElse(),
   }) {
     if (loading != null) {
@@ -327,7 +328,7 @@ class _$LoadingImpl implements _Loading {
   }
 }
 
-abstract class _Loading implements RentState {
+abstract class _Loading implements ProductState {
   const factory _Loading() = _$LoadingImpl;
 }
 
@@ -340,7 +341,7 @@ abstract class _$$EmptyImplCopyWith<$Res> {
 
 /// @nodoc
 class __$$EmptyImplCopyWithImpl<$Res>
-    extends _$RentStateCopyWithImpl<$Res, _$EmptyImpl>
+    extends _$ProductStateCopyWithImpl<$Res, _$EmptyImpl>
     implements _$$EmptyImplCopyWith<$Res> {
   __$$EmptyImplCopyWithImpl(
       _$EmptyImpl _value, $Res Function(_$EmptyImpl) _then)
@@ -354,11 +355,11 @@ class _$EmptyImpl implements _Empty {
 
   @override
   String toString() {
-    return 'RentState.empty()';
+    return 'ProductState.empty()';
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType && other is _$EmptyImpl);
   }
@@ -373,7 +374,7 @@ class _$EmptyImpl implements _Empty {
     required TResult Function() loading,
     required TResult Function() empty,
     required TResult Function(String err) error,
-    required TResult Function(List<RentModel> data) success,
+    required TResult Function(List<ClientModel> data) success,
   }) {
     return empty();
   }
@@ -385,7 +386,7 @@ class _$EmptyImpl implements _Empty {
     TResult? Function()? loading,
     TResult? Function()? empty,
     TResult? Function(String err)? error,
-    TResult? Function(List<RentModel> data)? success,
+    TResult? Function(List<ClientModel> data)? success,
   }) {
     return empty?.call();
   }
@@ -397,7 +398,7 @@ class _$EmptyImpl implements _Empty {
     TResult Function()? loading,
     TResult Function()? empty,
     TResult Function(String err)? error,
-    TResult Function(List<RentModel> data)? success,
+    TResult Function(List<ClientModel> data)? success,
     required TResult orElse(),
   }) {
     if (empty != null) {
@@ -447,7 +448,7 @@ class _$EmptyImpl implements _Empty {
   }
 }
 
-abstract class _Empty implements RentState {
+abstract class _Empty implements ProductState {
   const factory _Empty() = _$EmptyImpl;
 }
 
@@ -462,7 +463,7 @@ abstract class _$$ErrorImplCopyWith<$Res> {
 
 /// @nodoc
 class __$$ErrorImplCopyWithImpl<$Res>
-    extends _$RentStateCopyWithImpl<$Res, _$ErrorImpl>
+    extends _$ProductStateCopyWithImpl<$Res, _$ErrorImpl>
     implements _$$ErrorImplCopyWith<$Res> {
   __$$ErrorImplCopyWithImpl(
       _$ErrorImpl _value, $Res Function(_$ErrorImpl) _then)
@@ -492,11 +493,11 @@ class _$ErrorImpl implements _Error {
 
   @override
   String toString() {
-    return 'RentState.error(err: $err)';
+    return 'ProductState.error(err: $err)';
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$ErrorImpl &&
@@ -519,7 +520,7 @@ class _$ErrorImpl implements _Error {
     required TResult Function() loading,
     required TResult Function() empty,
     required TResult Function(String err) error,
-    required TResult Function(List<RentModel> data) success,
+    required TResult Function(List<ClientModel> data) success,
   }) {
     return error(err);
   }
@@ -531,7 +532,7 @@ class _$ErrorImpl implements _Error {
     TResult? Function()? loading,
     TResult? Function()? empty,
     TResult? Function(String err)? error,
-    TResult? Function(List<RentModel> data)? success,
+    TResult? Function(List<ClientModel> data)? success,
   }) {
     return error?.call(err);
   }
@@ -543,7 +544,7 @@ class _$ErrorImpl implements _Error {
     TResult Function()? loading,
     TResult Function()? empty,
     TResult Function(String err)? error,
-    TResult Function(List<RentModel> data)? success,
+    TResult Function(List<ClientModel> data)? success,
     required TResult orElse(),
   }) {
     if (error != null) {
@@ -593,7 +594,7 @@ class _$ErrorImpl implements _Error {
   }
 }
 
-abstract class _Error implements RentState {
+abstract class _Error implements ProductState {
   const factory _Error(final String err) = _$ErrorImpl;
 
   String get err;
@@ -608,12 +609,12 @@ abstract class _$$SucceessImplCopyWith<$Res> {
           _$SucceessImpl value, $Res Function(_$SucceessImpl) then) =
       __$$SucceessImplCopyWithImpl<$Res>;
   @useResult
-  $Res call({List<RentModel> data});
+  $Res call({List<ClientModel> data});
 }
 
 /// @nodoc
 class __$$SucceessImplCopyWithImpl<$Res>
-    extends _$RentStateCopyWithImpl<$Res, _$SucceessImpl>
+    extends _$ProductStateCopyWithImpl<$Res, _$SucceessImpl>
     implements _$$SucceessImplCopyWith<$Res> {
   __$$SucceessImplCopyWithImpl(
       _$SucceessImpl _value, $Res Function(_$SucceessImpl) _then)
@@ -628,7 +629,7 @@ class __$$SucceessImplCopyWithImpl<$Res>
       null == data
           ? _value._data
           : data // ignore: cast_nullable_to_non_nullable
-              as List<RentModel>,
+              as List<ClientModel>,
     ));
   }
 }
@@ -636,11 +637,11 @@ class __$$SucceessImplCopyWithImpl<$Res>
 /// @nodoc
 
 class _$SucceessImpl implements _Succeess {
-  const _$SucceessImpl(final List<RentModel> data) : _data = data;
+  const _$SucceessImpl(final List<ClientModel> data) : _data = data;
 
-  final List<RentModel> _data;
+  final List<ClientModel> _data;
   @override
-  List<RentModel> get data {
+  List<ClientModel> get data {
     if (_data is EqualUnmodifiableListView) return _data;
     // ignore: implicit_dynamic_type
     return EqualUnmodifiableListView(_data);
@@ -648,11 +649,11 @@ class _$SucceessImpl implements _Succeess {
 
   @override
   String toString() {
-    return 'RentState.success(data: $data)';
+    return 'ProductState.success(data: $data)';
   }
 
   @override
-  bool operator ==(dynamic other) {
+  bool operator ==(Object other) {
     return identical(this, other) ||
         (other.runtimeType == runtimeType &&
             other is _$SucceessImpl &&
@@ -676,7 +677,7 @@ class _$SucceessImpl implements _Succeess {
     required TResult Function() loading,
     required TResult Function() empty,
     required TResult Function(String err) error,
-    required TResult Function(List<RentModel> data) success,
+    required TResult Function(List<ClientModel> data) success,
   }) {
     return success(data);
   }
@@ -688,7 +689,7 @@ class _$SucceessImpl implements _Succeess {
     TResult? Function()? loading,
     TResult? Function()? empty,
     TResult? Function(String err)? error,
-    TResult? Function(List<RentModel> data)? success,
+    TResult? Function(List<ClientModel> data)? success,
   }) {
     return success?.call(data);
   }
@@ -700,7 +701,7 @@ class _$SucceessImpl implements _Succeess {
     TResult Function()? loading,
     TResult Function()? empty,
     TResult Function(String err)? error,
-    TResult Function(List<RentModel> data)? success,
+    TResult Function(List<ClientModel> data)? success,
     required TResult orElse(),
   }) {
     if (success != null) {
@@ -750,10 +751,10 @@ class _$SucceessImpl implements _Succeess {
   }
 }
 
-abstract class _Succeess implements RentState {
-  const factory _Succeess(final List<RentModel> data) = _$SucceessImpl;
+abstract class _Succeess implements ProductState {
+  const factory _Succeess(final List<ClientModel> data) = _$SucceessImpl;
 
-  List<RentModel> get data;
+  List<ClientModel> get data;
   @JsonKey(ignore: true)
   _$$SucceessImplCopyWith<_$SucceessImpl> get copyWith =>
       throw _privateConstructorUsedError;
