@@ -1,10 +1,12 @@
-import 'package:accountant/application/rent/rent_cubit.dart';
+import 'package:accountant/application/product/product_cubit.dart';
 import 'package:accountant/domain/client_model.dart';
-import 'package:accountant/presentation/extension/ext.dart';
+import 'package:accountant/helpers/show_message.dart';
 import 'package:accountant/presentation/pages/product_details_page.dart';
 import 'package:accountant/presentation/widgets/loading.dart';
+import 'package:accountant/presentation/widgets/padding.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class ManagerScreen extends StatefulWidget {
   final ProductState state;
@@ -34,31 +36,39 @@ class _ManagerScreenState extends State<ManagerScreen> {
             _dataTableKey = GlobalKey();
           });
 
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SingleChildScrollView(
-              child: DataTable(
-                  key: _dataTableKey,
-                  //decoration: const BoxDecoration(color: Colors.red),
-                  showCheckboxColumn: false,
-                  headingTextStyle: const TextStyle(
-                      color: Colors.black, fontWeight: FontWeight.w600),
-                  // headingRowColor: MaterialStateProperty.all(Colors.blue[200]),
-                  // dataRowColor: MaterialStateProperty.all(Colors.blue[50]),
-                  border: TableBorder.all(color: const Color(0xffF2F4F7)),
-                  columns: const [
-                    DataColumn(label: Text("#")),
-                    DataColumn(label: Text("Mijoz ismi")),
-                    // DataColumn(label: Text("Barcha olingan tovar narxi")),
-                    // DataColumn(label: Text("Umumiy to'lagan summa")),
-                    // DataColumn(label: Text("Berishi kerak")),
-                    // DataColumn(label: Text("O'chirish"))
-                  ],
-                  rows: List.generate(
-                    data.length,
-                    (index) => _returnDataRow(data, index, context),
-                  )),
-            ),
+          return Padding(
+            padding: EdgeInsets.only(top: 10.h),
+            child: ListView.builder(
+                itemCount: data.length,
+                itemBuilder: (context, index) {
+                  return FoxWayPadding(
+                    child: Card(
+                      child: ListTile(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ProductDetailsPage(
+                                element: data[index],
+                              ),
+                            ),
+                          );
+                        },
+                        leading: Text(
+                          "${index + 1}",
+                          style: const TextStyle(fontSize: 16.0),
+                        ),
+                        title: Text(data[index].client_name.toString(),
+                            style: const TextStyle(
+                                fontSize: 16.0, fontWeight: FontWeight.w500)),
+                        subtitle: Text(
+                            "Tovarlar soni: ${data[index].products.length.toString()}",
+                            style: const TextStyle(
+                                fontSize: 16.0, fontWeight: FontWeight.w400)),
+                      ),
+                    ),
+                  );
+                }),
           );
         });
   }
@@ -94,12 +104,12 @@ class _ManagerScreenState extends State<ManagerScreen> {
       List<ClientModel> data, int index, BuildContext context) {
     return DataRow(
         onSelectChanged: (v) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ProductDetailsPage(data: data[index]),
-            ),
-          );
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(
+          //     builder: (context) => ProductDetailsPage(data: data[index]),
+          //   ),
+          // );
         },
         cells: [
           DataCell(
@@ -108,48 +118,6 @@ class _ManagerScreenState extends State<ManagerScreen> {
           DataCell(
             Text(data[index].client_name.toString()),
           ),
-          // DataCell(Text(data[index].price!.sum.toString().formatMoney())),
-          // DataCell(Text(data[index].paid_dept!.sum.toString().formatMoney())),
-          // DataCell(Text(((num.tryParse(data[index]
-          //                 .price!
-          //                 .sum
-          //                 .toString()
-          //                 .pickOnlyNumbers()) ??
-          //             0) -
-          //         (num.tryParse(data[index]
-          //                 .paid_dept!
-          //                 .sum
-          //                 .toString()
-          //                 .pickOnlyNumbers()) ??
-          //             0))
-          //     .toString()
-          //     .formatMoney())),
-          // DataCell(
-          //   TextFormField(
-          //     readOnly: true,
-          //     initialValue: DateFormat(DateFormat.YEAR_MONTH_DAY)
-          //         .format(DateTime.parse(data[index].given_date.toString())),
-          //     decoration: const InputDecoration(
-          //         border: OutlineInputBorder(
-          //             borderSide: BorderSide(color: Colors.transparent)),
-          //         enabledBorder: OutlineInputBorder(
-          //             borderSide: BorderSide(color: Colors.transparent)),
-          //         focusedBorder: OutlineInputBorder(
-          //             borderSide: BorderSide(color: Colors.transparent)),
-          //         errorBorder: OutlineInputBorder(
-          //             borderSide: BorderSide(color: Colors.red)),
-          //         hintText: "Berilgan sana"),
-          //   ),
-          // ),
-          // DataCell(ElevatedButton(
-          //   onPressed: () {
-          //     _deleteClient(
-          //         data[index].id.toString(),
-          //         data[index].tenant_name.toString(),
-          //         data[index].product_type.toString());
-          //   },
-          //   child: const Text("O'chirish"),
-          // )),
         ]);
   }
 

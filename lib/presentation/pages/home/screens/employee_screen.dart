@@ -1,4 +1,5 @@
-import 'package:accountant/application/rent/rent_cubit.dart';
+
+import 'package:accountant/application/product/product_cubit.dart';
 import 'package:accountant/domain/client_model.dart';
 import 'package:accountant/presentation/extension/ext.dart';
 import 'package:accountant/presentation/pages/product_details_page.dart';
@@ -94,12 +95,12 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
       List<ClientModel> data, int index, BuildContext context) {
     return DataRow(
         onSelectChanged: (v) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ProductDetailsPage(data: data[index]),
-            ),
-          );
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(
+          //     builder: (context) => ProductDetailsPage(data: data[index]),
+          //   ),
+          // );
         },
         cells: [
           DataCell(

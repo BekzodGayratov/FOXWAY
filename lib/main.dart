@@ -1,5 +1,5 @@
 import 'package:accountant/application/login/login_cubit.dart';
-import 'package:accountant/application/rent/rent_cubit.dart';
+import 'package:accountant/application/product/product_cubit.dart';
 import 'package:accountant/firebase_options.dart';
 import 'package:accountant/presentation/pages/splash_screen.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';

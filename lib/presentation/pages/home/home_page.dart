@@ -1,4 +1,4 @@
-import 'package:accountant/application/rent/rent_cubit.dart';
+import 'package:accountant/application/product/product_cubit.dart';
 import 'package:accountant/domain/foxway_credentials.dart';
 import 'package:accountant/domain/post_client_model.dart';
 import 'package:accountant/helpers/date_picker.dart';
@@ -32,7 +32,6 @@ class _HomePageState extends State<HomePage> {
   late final TextEditingController _priceController;
   late final TextEditingController _paidDebtController;
   late final TextEditingController _givenDateController;
-
   late final TextEditingController _phoneController;
 
   ///
@@ -52,9 +51,9 @@ class _HomePageState extends State<HomePage> {
 
     if (FirebaseAuth.instance.currentUser!.email ==
         FoxwayCredentials.managerEmail) {
-      title = "Foxway boshqaruvchisi";
+      title = "Boshqaruvchi";
     } else {
-      title = "Foxway xodimi";
+      title = "Xodim";
     }
 
     _tenantNameController = TextEditingController();
@@ -81,7 +80,7 @@ class _HomePageState extends State<HomePage> {
     _givenDateController.dispose();
     _phoneController.dispose();
     _tenantNameController.dispose();
-
+    _paidDebtController.dispose();
     if (_cubit.myStreamSubscription != null) {
       _cubit.myStreamSubscription!.cancel();
     }
@@ -146,107 +145,103 @@ class _HomePageState extends State<HomePage> {
                               backgroundColor: Colors.transparent,
                               context: context,
                               builder: (context) {
-                                return Padding(
-                                  padding: EdgeInsets.only(
-                                      bottom: 50.h, left: 10.w, right: 10.w),
-                                  child: Container(
-                                    width: double.infinity,
-                                    decoration: BoxDecoration(
-                                        color: Colors.blue,
-                                        borderRadius:
-                                            BorderRadius.circular(12.0)),
+                                return Container(
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                      color: Colors.blue,
+                                      borderRadius:
+                                          BorderRadius.circular(12.0)),
+                                  child: SingleChildScrollView(
+                                    scrollDirection: Axis.horizontal,
                                     child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: SingleChildScrollView(
-                                        child: Padding(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 15.w, vertical: 10.h),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  const Text(
-                                                    "Barcha ijara: ",
-                                                    style: TextStyle(
-                                                        fontSize: 20.0,
-                                                        fontWeight:
-                                                            FontWeight.w400,
-                                                        color: Colors.white),
-                                                  ),
-                                                  Text(
-                                                    " ${context.watch<ProductCubit>().totalPriceSom.toString()} SO'M | ${context.watch<ProductCubit>().totalPriceUsd.toString()} USD",
-                                                    style: TextStyle(
-                                                        fontSize: 20.0,
-                                                        fontStyle:
-                                                            FontStyle.italic,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color:
-                                                            Colors.yellow[400]),
-                                                  ),
-                                                ],
-                                              ),
-                                              Gap(10.h),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  const Text(
-                                                    "To'langan: ",
-                                                    style: TextStyle(
-                                                        fontSize: 20.0,
-                                                        fontWeight:
-                                                            FontWeight.w400,
-                                                        color: Colors.white),
-                                                  ),
-                                                  Text(
-                                                    " ${context.watch<ProductCubit>().totalPaidDeptSom.toString()} SO'M | ${context.watch<ProductCubit>().totalPaidDeptUsd.toString()} USD",
-                                                    style: TextStyle(
-                                                        fontSize: 20.0,
-                                                        fontStyle:
-                                                            FontStyle.italic,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color:
-                                                            Colors.yellow[400]),
-                                                  ),
-                                                ],
-                                              ),
-                                              Gap(10.h),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  const Text(
-                                                    "To'lanmagan: ",
-                                                    style: TextStyle(
-                                                        fontSize: 20.0,
-                                                        fontWeight:
-                                                            FontWeight.w400,
-                                                        color: Colors.white),
-                                                  ),
-                                                  Text(
-                                                    " ${context.watch<ProductCubit>().totalDeptSom.toString()} SO'M | ${context.watch<ProductCubit>().totalDeptUsd.toString()} USD",
-                                                    style: TextStyle(
-                                                        fontSize: 20.0,
-                                                        fontStyle:
-                                                            FontStyle.italic,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color:
-                                                            Colors.yellow[400]),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
+                                      child: Padding(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 15.w, vertical: 10.h),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                const Text(
+                                                  "Barcha tovar narxi: ",
+                                                  style: TextStyle(
+                                                      fontSize: 15.0,
+                                                      fontWeight:
+                                                          FontWeight.w400,
+                                                      color: Colors.white),
+                                                ),
+                                                Text(
+                                                  " ${context.watch<ProductCubit>().totalPriceSom.toString().formatMoney()} SO'M | ${context.watch<ProductCubit>().totalPriceUsd.toString().formatMoney()} USD",
+                                                  style: TextStyle(
+                                                      fontSize: 15.0,
+                                                      fontStyle:
+                                                          FontStyle.italic,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color:
+                                                          Colors.yellow[400]),
+                                                ),
+                                              ],
+                                            ),
+                                            Gap(10.h),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                const Text(
+                                                  "To'landi: ",
+                                                  style: TextStyle(
+                                                      fontSize: 15.0,
+                                                      fontWeight:
+                                                          FontWeight.w400,
+                                                      color: Colors.white),
+                                                ),
+                                                Text(
+                                                  " ${context.watch<ProductCubit>().totalPaidDeptSom.toString().formatMoney()} SO'M | ${context.watch<ProductCubit>().totalPaidDeptUsd.toString().formatMoney()} USD",
+                                                  style: TextStyle(
+                                                      fontSize: 15.0,
+                                                      fontStyle:
+                                                          FontStyle.italic,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color:
+                                                          Colors.yellow[400]),
+                                                ),
+                                              ],
+                                            ),
+                                            Gap(10.h),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment
+                                                      .spaceBetween,
+                                              children: [
+                                                const Text(
+                                                  "Qoldi: ",
+                                                  style: TextStyle(
+                                                      fontSize: 15.0,
+                                                      fontWeight:
+                                                          FontWeight.w400,
+                                                      color: Colors.white),
+                                                ),
+                                                Text(
+                                                  " ${context.watch<ProductCubit>().totalDeptSom.toString().formatMoney()} SO'M | ${context.watch<ProductCubit>().totalDeptUsd.toString().formatMoney()} USD",
+                                                  style: TextStyle(
+                                                      fontSize: 15.0,
+                                                      fontStyle:
+                                                          FontStyle.italic,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                      color:
+                                                          Colors.yellow[400]),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ),
@@ -270,7 +265,7 @@ class _HomePageState extends State<HomePage> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  "Arenda berish",
+                  "Mijoz qo'shish",
                   style: TextStyle(fontSize: 18.0),
                 ),
                 IconButton(
@@ -458,8 +453,8 @@ class _HomePageState extends State<HomePage> {
                                           .pickOnlyNumbers()) ??
                                       0.0),
                               givenDate: _givenDateController.text,
-                              phoneNumber: _phoneController.text,
                             ),
+                            phoneNumber: _phoneController.text,
                             givenDate: _givenDateController.text,
                           ));
 

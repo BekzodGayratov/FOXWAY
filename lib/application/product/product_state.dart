@@ -1,4 +1,4 @@
-part of 'rent_cubit.dart';
+part of 'product_cubit.dart';
 
 @freezed
 class ProductState with _$ProductState {

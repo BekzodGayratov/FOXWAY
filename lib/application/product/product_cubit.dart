@@ -1,12 +1,14 @@
 import 'dart:async';
 import 'package:accountant/domain/client_model.dart';
 import 'package:accountant/domain/post_client_model.dart';
+import 'package:accountant/helpers/show_message.dart';
 import 'package:accountant/infrastructure/fire_store_service.dart';
 import 'package:bloc/bloc.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
-part 'rent_state.dart';
-part 'rent_cubit.freezed.dart';
+import 'package:accountant/domain/client_model.dart' as product;
+part 'product_state.dart';
+part 'product_cubit.freezed.dart';
 
 class ProductCubit extends Cubit<ProductState> {
   ProductCubit() : super(const ProductState.initial()) {
@@ -22,23 +24,26 @@ class ProductCubit extends Cubit<ProductState> {
   double totalPaidDeptUsd = 0.0;
   double totalPriceUsd = 0.0;
 
-  final RentsFireStoreService _rentsFireStoreService = RentsFireStoreService();
+  final ProductsFireStoreService _productsFireStoreService =
+      ProductsFireStoreService();
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? myStreamSubscription;
 
   List<ClientModel>? clients;
+
+  Stream<QuerySnapshot<Map<String, dynamic>>>? productSnapshot;
 
   ///
   Future<void> getProducts() async {
     emit(const ProductState.loading());
 
     try {
-      Stream<QuerySnapshot<Map<String, dynamic>>> rentSnapshot =
-          _rentsFireStoreService.rentsCollection
-              .orderBy("created_at")
-              .snapshots() as Stream<QuerySnapshot<Map<String, dynamic>>>;
+      productSnapshot = _productsFireStoreService.clientCollection
+          .orderBy("created_at", descending: false)
+          .snapshots() as Stream<QuerySnapshot<Map<String, dynamic>>>;
 
-      myStreamSubscription = rentSnapshot.listen((event) async {
+      myStreamSubscription = productSnapshot!.listen((event) async {
         clients = event.docs.map((e) => ClientModel.fromMap(e.data())).toList();
+
         for (var i = 0; i < event.docs.length; i++) {
           clients![i].id = event.docs[i].id;
         }
@@ -46,9 +51,10 @@ class ProductCubit extends Cubit<ProductState> {
         if (clients!.isEmpty) {
           emit(const ProductState.empty());
         } else {
-          // calculateTotalPrice();
-          // calculateTotalPaidDept();
-          // calculateTotalDept();
+          //   calculateClientFinance();
+          calculateTotalPrice();
+          calculateTotalPaidDept();
+          calculateTotalDept();
 
           emit(ProductState.success(clients!));
         }
@@ -61,10 +67,10 @@ class ProductCubit extends Cubit<ProductState> {
   ///
 
   Future<void> postClient(PostClientModel rentModel) async {
-    await _rentsFireStoreService.writeClient(rentModel);
-    // calculateTotalPrice();
-    // calculateTotalPaidDept();
-    // calculateTotalDept();
+    await _productsFireStoreService.writeClient(rentModel);
+    calculateTotalPrice();
+    calculateTotalPaidDept();
+    calculateTotalDept();
   }
 
   ///
@@ -72,20 +78,62 @@ class ProductCubit extends Cubit<ProductState> {
       {required String id,
       required PostClientModel rentModel,
       required String createdAt}) async {
-    await _rentsFireStoreService.updateClient(
+    await _productsFireStoreService.updateClient(
         id: id, clientModel: rentModel, createdAt: createdAt);
-    // calculateTotalPrice();
-    // calculateTotalPaidDept();
-    // calculateTotalDept();
+    calculateTotalPrice();
+    calculateTotalPaidDept();
+    calculateTotalDept();
   }
 
   ///
   Future<void> deleteClient({required String id}) async {
-    await _rentsFireStoreService.deleteClient(id);
-    // calculateTotalPrice();
-    // calculateTotalPaidDept();
-    // calculateTotalDept();
+    await _productsFireStoreService.deleteClient(id);
+    calculateTotalPrice();
+    calculateTotalPaidDept();
+    calculateTotalDept();
   }
+
+  ///
+  Future<void> postProduct(
+      {required String id,
+      required ClientModel clientModel,
+      required product.ProductModel productModel}) async {
+    await _productsFireStoreService.postProduct(
+        clientModel: clientModel, productModel: productModel);
+    getProducts();
+
+    calculateTotalPrice();
+    calculateTotalPaidDept();
+    calculateTotalDept();
+  }
+
+  ///
+  Future<void> updateProduct(
+      {required ClientModel clientModel,
+      required List<product.ProductModel?> productModels}) async {
+    await _productsFireStoreService.updateProduct(
+        clientModel: clientModel, productModels: productModels);
+    getProducts();
+
+    calculateTotalPrice();
+    calculateTotalPaidDept();
+    calculateTotalDept();
+  }
+
+  ///
+  Future<void> deleteProduct(
+      {required String id,
+      required ClientModel clientModel,
+      required product.ProductModel product}) async {
+    await _productsFireStoreService.deleteProduct(
+        clientModel: clientModel, product: product);
+
+    calculateTotalPrice();
+    calculateTotalPaidDept();
+    calculateTotalDept();
+  }
+
+  ////
 
   void calculateTotalDept() {
     totalDeptSom = 0.0;
