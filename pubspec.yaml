@@ -50,6 +50,7 @@ dependencies:
   gap: ^3.0.1
   firebase_app_check: ^0.2.1+8
   uuid: ^4.2.2
+  dartz: ^0.10.1
 
 dev_dependencies:
   flutter_test:

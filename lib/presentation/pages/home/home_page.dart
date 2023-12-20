@@ -1,12 +1,16 @@
-import 'package:accountant/application/product/product_cubit.dart';
+import 'package:accountant/application/client/client_cubit.dart';
+import 'package:accountant/domain/client_model.dart';
 import 'package:accountant/domain/foxway_credentials.dart';
 import 'package:accountant/domain/post_client_model.dart';
+import 'package:accountant/domain/price_model.dart';
+import 'package:accountant/domain/product_model.dart';
 import 'package:accountant/helpers/date_picker.dart';
 import 'package:accountant/helpers/input_formatters.dart';
 import 'package:accountant/presentation/extension/ext.dart';
 import 'package:accountant/presentation/pages/home/screens/employee_screen.dart';
 import 'package:accountant/presentation/pages/home/screens/manager_screen.dart';
 import 'package:accountant/presentation/pages/splash_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -23,21 +27,24 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late ProductCubit _cubit;
+  late ClientCubit _cubit;
 
   //CONTROLLERS
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _tenantNameController;
   late final TextEditingController _productTypeController;
+  late final TextEditingController _phoneController;
   late final TextEditingController _priceController;
   late final TextEditingController _paidDebtController;
   late final TextEditingController _givenDateController;
-  late final TextEditingController _phoneController;
 
   ///
   String title = "Foxway";
 
   late String _currency;
+
+  num totalSumUzs = 0.0;
+  num totalSumUsd = 0.0;
   @override
   void initState() {
     SystemChrome.setPreferredOrientations([
@@ -69,7 +76,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void didChangeDependencies() {
-    _cubit = BlocProvider.of<ProductCubit>(context);
+    _cubit = BlocProvider.of<ClientCubit>(context);
     super.didChangeDependencies();
   }
 
@@ -90,176 +97,100 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ProductCubit, ProductState>(
+    return BlocBuilder<ClientCubit, ClientState>(
       builder: (context, state) {
         return Scaffold(
-          appBar: AppBar(
-            backgroundColor: Colors.blue,
-            elevation: 4,
-            centerTitle: true,
-            title: Text(
-              title,
-              style: const TextStyle(
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white),
+            appBar: AppBar(
+              backgroundColor: Colors.amber,
+              elevation: 4,
+              centerTitle: true,
+              title: Text(
+                title,
+                style: const TextStyle(
+                    fontSize: 20.0,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.white),
+              ),
+              actions: [
+                IconButton(
+                    onPressed: () {
+                      showLogoutDialog(context);
+                    },
+                    icon: const Icon(Icons.logout, color: Colors.white))
+              ],
             ),
-            actions: [
-              IconButton(
-                  onPressed: () {
-                    showLogoutDialog(context);
-                  },
-                  icon: const Icon(Icons.logout, color: Colors.white))
-            ],
-          ),
-          body: FirebaseAuth.instance.currentUser!.email ==
-                  FoxwayCredentials.managerEmail
-              ? ManagerScreen(state: state)
-              : EmployeeScreen(state: state),
-          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-          floatingActionButton: FloatingActionButton(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            onPressed: () async {
-              await _showAddRentDialog(context);
-              setState(() {});
-            },
-            child: const Icon(Icons.add),
-          ),
-          bottomNavigationBar: state.when(
-              initial: () => null,
-              loading: () => null,
-              empty: () => null,
-              error: (err) => null,
-              success: (data) => SizedBox(
-                    height: 50.h,
-                    width: double.infinity,
-                    child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(0.0)),
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white),
-                        onPressed: () {
-                          showModalBottomSheet(
-                              backgroundColor: Colors.transparent,
-                              context: context,
-                              builder: (context) {
-                                return Container(
-                                  width: double.infinity,
-                                  decoration: BoxDecoration(
-                                      color: Colors.blue,
-                                      borderRadius:
-                                          BorderRadius.circular(12.0)),
-                                  child: SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: SingleChildScrollView(
-                                      child: Padding(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: 15.w, vertical: 10.h),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                const Text(
-                                                  "Barcha tovar narxi: ",
-                                                  style: TextStyle(
-                                                      fontSize: 15.0,
-                                                      fontWeight:
-                                                          FontWeight.w400,
-                                                      color: Colors.white),
-                                                ),
-                                                Text(
-                                                  " ${context.watch<ProductCubit>().totalPriceSom.toString().formatMoney()} SO'M | ${context.watch<ProductCubit>().totalPriceUsd.toString().formatMoney()} USD",
-                                                  style: TextStyle(
-                                                      fontSize: 15.0,
-                                                      fontStyle:
-                                                          FontStyle.italic,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color:
-                                                          Colors.yellow[400]),
-                                                ),
-                                              ],
-                                            ),
-                                            Gap(10.h),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                const Text(
-                                                  "To'landi: ",
-                                                  style: TextStyle(
-                                                      fontSize: 15.0,
-                                                      fontWeight:
-                                                          FontWeight.w400,
-                                                      color: Colors.white),
-                                                ),
-                                                Text(
-                                                  " ${context.watch<ProductCubit>().totalPaidDeptSom.toString().formatMoney()} SO'M | ${context.watch<ProductCubit>().totalPaidDeptUsd.toString().formatMoney()} USD",
-                                                  style: TextStyle(
-                                                      fontSize: 15.0,
-                                                      fontStyle:
-                                                          FontStyle.italic,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color:
-                                                          Colors.yellow[400]),
-                                                ),
-                                              ],
-                                            ),
-                                            Gap(10.h),
-                                            Row(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment
-                                                      .spaceBetween,
-                                              children: [
-                                                const Text(
-                                                  "Qoldi: ",
-                                                  style: TextStyle(
-                                                      fontSize: 15.0,
-                                                      fontWeight:
-                                                          FontWeight.w400,
-                                                      color: Colors.white),
-                                                ),
-                                                Text(
-                                                  " ${context.watch<ProductCubit>().totalDeptSom.toString().formatMoney()} SO'M | ${context.watch<ProductCubit>().totalDeptUsd.toString().formatMoney()} USD",
-                                                  style: TextStyle(
-                                                      fontSize: 15.0,
-                                                      fontStyle:
-                                                          FontStyle.italic,
-                                                      fontWeight:
-                                                          FontWeight.w500,
-                                                      color:
-                                                          Colors.yellow[400]),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              });
-                        },
-                        child: const Text("Umumiy holatni ko'rish")),
-                  )),
-        );
+            body: FirebaseAuth.instance.currentUser!.email ==
+                    FoxwayCredentials.managerEmail
+                ? ManagerScreen(state: state)
+                : EmployeeScreen(state: state),
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+            floatingActionButton: FloatingActionButton(
+              backgroundColor: Colors.amber,
+              foregroundColor: Colors.white,
+              onPressed: () async {
+                await _showAddClientDialog(context);
+                setState(() {});
+              },
+              child: const Icon(Icons.add),
+            ),
+            bottomNavigationBar: state.when(
+                initial: () => null,
+                loading: () => null,
+                empty: () => null,
+                error: (err) => null,
+                success: (data) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    setState(() {
+                      _calculateTotalSum(data);
+                    });
+                  });
+
+                  return Container(
+                      height: 80.h,
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                          color: Colors.amber,
+                          boxShadow: [
+                            BoxShadow(color: Colors.grey, blurRadius: 5.0)
+                          ]),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8.0, vertical: 8.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text("Umumiy qoldiq:",
+                                style: TextStyle(
+                                    fontSize: 20.0,
+                                    fontStyle: FontStyle.italic,
+                                    color: Colors.white)),
+                            SingleChildScrollView(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                      "${totalSumUzs.toString().pickOnlyNumbers().formatMoney()} UZS",
+                                      style: const TextStyle(
+                                          fontSize: 20.0, color: Colors.white)),
+                                  Text(
+                                      "${totalSumUsd.toString().pickOnlyNumbers().formatMoney()} USD",
+                                      style: const TextStyle(
+                                          fontSize: 20.0, color: Colors.white)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ));
+                }));
       },
     );
   }
 
-  Future<dynamic> _showAddRentDialog(BuildContext context) {
+  Future<dynamic> _showAddClientDialog(BuildContext context) {
     return showDialog(
         context: context,
-        builder: (context) {
+        builder: (ctx) {
           return AlertDialog(
             title: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -273,7 +204,7 @@ class _HomePageState extends State<HomePage> {
                       _productTypeController.clear();
                       _priceController.clear();
                       _givenDateController.clear();
-
+                      _paidDebtController.clear();
                       _phoneController.clear();
                       _tenantNameController.clear();
 
@@ -436,42 +367,107 @@ class _HomePageState extends State<HomePage> {
             ),
             actions: [
               ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_formKey.currentState!.validate()) {
-                      context.read<ProductCubit>().postClient(PostClientModel(
+                      context
+                          .read<ClientCubit>()
+                          .postClient(PostClientModel(
                             clientName: _tenantNameController.text,
-                            product: ProductModel(
-                              productType: _productTypeController.text,
-                              price: Price(
-                                  currency: _currency,
-                                  sum: num.tryParse(_priceController.text
-                                          .pickOnlyNumbers()) ??
-                                      0.0),
-                              paidMoney: Price(
-                                  currency: _currency,
-                                  sum: num.tryParse(_paidDebtController.text
-                                          .pickOnlyNumbers()) ??
-                                      0.0),
-                              givenDate: _givenDateController.text,
-                            ),
                             phoneNumber: _phoneController.text,
                             givenDate: _givenDateController.text,
-                          ));
+                          ))
+                          .then((clientRef) async {
+                        if (clientRef != null) {
+                          final CollectionReference productCollection =
+                              FirebaseFirestore.instance.collection(
+                                  "clients/${clientRef.id}/products");
 
-                      _productTypeController.clear();
-                      _priceController.clear();
-                      _givenDateController.clear();
+                          final s = await productCollection.add({
+                            "product_type": _productTypeController.text,
+                            "price": Price(
+                                    sum: num.tryParse(_priceController.text
+                                            .pickOnlyNumbers()) ??
+                                        0.0,
+                                    currency: _currency.toLowerCase())
+                                .toMap(),
+                            "paid_money": Price(
+                                    sum: num.tryParse(_paidDebtController.text
+                                            .pickOnlyNumbers()) ??
+                                        0.0,
+                                    currency: _currency.toLowerCase())
+                                .toMap(),
+                            "given_date": _givenDateController.text,
+                            "created_at": DateTime.now().toString()
+                          });
+                          final productRef = await s.get();
+                          final clientRes = ClientModel.fromMap(
+                              clientRef.data() as Map<String, dynamic>);
+                          final productRes = ProductModel.fromMap(
+                              productRef.data() as Map<String, dynamic>);
+                          _productTypeController.clear();
+                          _priceController.clear();
+                          _givenDateController.clear();
+                          _paidDebtController.clear();
+                          _phoneController.clear();
+                          _tenantNameController.clear();
+                          Future.delayed(Duration.zero).then((value) async {
+                            if (productRes.price!.currency == "sum") {
+                              await context.read<ClientCubit>().updateClient(
+                                  id: clientRef.id,
+                                  rentModel: ClientModel(
+                                      client_name: clientRes.client_name,
+                                      phone_number: clientRes.phone_number,
+                                      given_date: clientRes.given_date,
+                                      created_at: clientRes.created_at,
+                                      updated_at: clientRes.updated_at,
+                                      total_sum_uzs:
+                                          ((productRes.price!.sum ?? 0.0) -
+                                                  (productRes.paid_money!.sum ??
+                                                      0.0))
+                                              .toString()
+                                              .pickOnlyNumbers(),
+                                      total_sum_usd: "0.0"));
+                            } else {
+                              await context.read<ClientCubit>().updateClient(
+                                  id: clientRef.id,
+                                  rentModel: ClientModel(
+                                      client_name: clientRes.client_name,
+                                      phone_number: clientRes.phone_number,
+                                      given_date: clientRes.given_date,
+                                      created_at: clientRes.created_at,
+                                      updated_at: clientRes.updated_at,
+                                      total_sum_usd:
+                                          ((productRes.price!.sum ?? 0.0) -
+                                                  (productRes.paid_money!.sum ??
+                                                      0.0))
+                                              .toString()
+                                              .pickOnlyNumbers(),
+                                      total_sum_uzs: "0.0"));
+                            }
+                          });
+                        }
+                      });
 
-                      _phoneController.clear();
-                      _tenantNameController.clear();
-
-                      Navigator.of(context).pop();
+                      Navigator.of(ctx).pop();
                     }
                   },
                   child: const Text("Qo'shish"))
             ],
           );
         });
+  }
+
+  void _calculateTotalSum(List<ClientModel> clients) {
+    totalSumUzs = 0.0;
+    totalSumUsd = 0.0;
+    for (var element in clients) {
+      totalSumUzs +=
+          int.tryParse(element.total_sum_uzs.toString().pickOnlyNumbers()) ??
+              0.0;
+      totalSumUsd +=
+          int.tryParse(element.total_sum_usd.toString().pickOnlyNumbers()) ??
+              0.0;
+    }
   }
 }
 

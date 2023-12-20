@@ -1,7 +1,8 @@
+import 'package:accountant/application/client/client_cubit.dart';
 import 'package:accountant/application/login/login_cubit.dart';
-import 'package:accountant/application/product/product_cubit.dart';
 import 'package:accountant/firebase_options.dart';
 import 'package:accountant/presentation/pages/splash_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -14,6 +15,11 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  FirebaseFirestore.instance.settings =
+      const Settings(persistenceEnabled: true);
+
+  FirebaseFirestore.instance.settings =
+      const Settings(cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED);
   await FirebaseAppCheck.instance
       // Your personal reCaptcha public key goes here:
       .activate(
@@ -24,7 +30,7 @@ void main() async {
 
   runApp(MultiBlocProvider(providers: [
     BlocProvider(create: (context) => LoginCubit()),
-    BlocProvider(create: (context) => ProductCubit()),
+    BlocProvider(create: (context) => ClientCubit()),
   ], child: const MyApp()));
 }
 

@@ -1,14 +1,18 @@
-
-import 'package:accountant/application/product/product_cubit.dart';
+import 'package:accountant/application/client/client_cubit.dart';
 import 'package:accountant/domain/client_model.dart';
+import 'package:accountant/helpers/input_formatters.dart';
 import 'package:accountant/presentation/extension/ext.dart';
-import 'package:accountant/presentation/pages/product_details_page.dart';
+import 'package:accountant/presentation/pages/details/emp_product_details_page.dart';
+import 'package:accountant/presentation/pages/details/manager_product_details_page.dart';
 import 'package:accountant/presentation/widgets/loading.dart';
+import 'package:accountant/presentation/widgets/padding.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:gap/gap.dart';
 
 class EmployeeScreen extends StatefulWidget {
-  final ProductState state;
+  final ClientState state;
 
   const EmployeeScreen({super.key, required this.state});
 
@@ -17,7 +21,21 @@ class EmployeeScreen extends StatefulWidget {
 }
 
 class _EmployeeScreenState extends State<EmployeeScreen> {
-  GlobalKey<_EmployeeScreenState> _dataTableKey = GlobalKey();
+  late final TextEditingController _tenantNameController;
+  late final TextEditingController _productTypeController;
+  late final TextEditingController _phoneController;
+  final _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    _tenantNameController = TextEditingController();
+    _productTypeController = TextEditingController();
+
+    _phoneController = TextEditingController();
+
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return widget.state.when(
@@ -26,155 +44,207 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
               child: FoxLoadingWidget(),
             ),
         empty: () => const Center(
-              child: Text("Sizda ijaralar mavjud emas"),
+              child: Text("Sizda mijozlar mavjud emas"),
             ),
         error: (err) => Center(child: Text(err)),
         success: (data) {
-          setState(() {
-            data = data;
-            _dataTableKey = GlobalKey();
-          });
-
-          return SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: SingleChildScrollView(
-              child: DataTable(
-                  key: _dataTableKey,
-                  //decoration: const BoxDecoration(color: Colors.red),
-                  showCheckboxColumn: false,
-                  headingTextStyle: const TextStyle(
-                      color: Colors.black, fontWeight: FontWeight.w600),
-                  // headingRowColor: MaterialStateProperty.all(Colors.blue[200]),
-                  // dataRowColor: MaterialStateProperty.all(Colors.blue[50]),
-                  border: TableBorder.all(color: const Color(0xffF2F4F7)),
-                  columns: const [
-                    DataColumn(label: Text("#")),
-                    DataColumn(label: Text("Mijoz ismi")),
-                    DataColumn(label: Text("Barcha olingan tovar narxi")),
-                    DataColumn(label: Text("Umumiy to'lagan summa")),
-                    DataColumn(label: Text("Berishi kerak")),
-                    DataColumn(label: Text("O'chirish"))
-                  ],
-                  rows: List.generate(
-                    data.length,
-                    (index) => _returnDataRow(data, index, context),
-                  )),
-            ),
+          return Padding(
+            padding: EdgeInsets.only(top: 10.h),
+            child: ListView.builder(
+                itemCount: data.length,
+                itemBuilder: (context, index) {
+                  return FoxWayPadding(
+                    child: Card(
+                      child: ListTile(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    EmployeeProductDetailsPage(
+                                  element: data[index],
+                                ),
+                              ),
+                            );
+                          },
+                          leading: Text(
+                            "${index + 1}",
+                            style: const TextStyle(fontSize: 16.0),
+                          ),
+                          title: Text(data[index].client_name.toString(),
+                              style: const TextStyle(
+                                  fontSize: 16.0, fontWeight: FontWeight.w500)),
+                          subtitle: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                "Qoldiq: ",
+                                style: TextStyle(
+                                    fontSize: 16.0,
+                                    fontWeight: FontWeight.w400),
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  Text(
+                                      "${data[index].total_sum_usd.toString().pickOnlyNumbers().formatMoney()} USD",
+                                      style: const TextStyle(
+                                          fontSize: 16.0,
+                                          fontWeight: FontWeight.w400)),
+                                  Text(
+                                      "${data[index].total_sum_uzs.toString().pickOnlyNumbers().formatMoney()} UZS",
+                                      style: const TextStyle(
+                                          fontSize: 16.0,
+                                          fontWeight: FontWeight.w400)),
+                                ],
+                              ),
+                            ],
+                          ),
+                          trailing: PopupMenuButton(itemBuilder: (context) {
+                            return [
+                              // PopupMenuItem(
+                              //     onTap: () {
+                              //       _deleteClient(data[index].id.toString(),
+                              //           data[index].client_name.toString());
+                              //     },
+                              //     child: Row(
+                              //       children: [
+                              //         const Icon(Icons.delete_outline),
+                              //         Gap(5.w),
+                              //         const Text("O'chirish")
+                              //       ],
+                              //     )),
+                              PopupMenuItem(
+                                  onTap: () {
+                                    _updateClient(context, data[index]);
+                                  },
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.edit_outlined),
+                                      Gap(5.w),
+                                      const Text("Tahrirlash")
+                                    ],
+                                  ))
+                            ];
+                          })),
+                    ),
+                  );
+                }),
           );
         });
   }
 
-  void _deleteClient(String id, String tenant, String product) {
-    showDialog(
+  // void _deleteClient(String id, String tenant) {
+  //   showDialog(
+  //       context: context,
+  //       builder: (context) {
+  //         return AlertDialog(
+  //           title: ListTile(
+  //             title: Text("Mijoz: $tenant"),
+  //           ),
+  //           content: const Text("haqiqatdan o'chirmoqchimisiz?"),
+  //           actions: [
+  //             ElevatedButton
+  //                 onPressed: () {
+  //                   Navigator.of(context).pop();
+  //                 },
+  //                 child: const Text("Yo'q")),
+  //             ElevatedButton(
+  //                 onPressed: () {
+  //                   context.read<ClientCubit>().deleteClient(id: id);
+  //                   Navigator.of(context).pop();
+  //                 },
+  //                 child: const Text("Ha"))
+  //           ],
+  //         );
+  //       });
+  // }
+
+  Future<dynamic> _updateClient(BuildContext context, ClientModel clientModel) {
+    _tenantNameController.text = clientModel.client_name ?? "";
+    _phoneController.text = clientModel.phone_number ?? "";
+
+    return showDialog(
         context: context,
         builder: (context) {
           return AlertDialog(
-            title: ListTile(
-              title: Text("Ijarachi: $tenant"),
-              subtitle: Text("Mahsulot: $product"),
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Ma'lumotlarni yangilash",
+                  style: TextStyle(fontSize: 18.0),
+                ),
+                IconButton(
+                    onPressed: () {
+                      _productTypeController.clear();
+
+                      _phoneController.clear();
+                      _tenantNameController.clear();
+
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(Icons.cancel_outlined))
+              ],
             ),
-            content: const Text("haqiqatdan o'chirmoqchimisiz?"),
+            content: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 16.h),
+              child: SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: StatefulBuilder(builder: (context, setState) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Gap(10.h),
+                        TextFormField(
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          controller: _tenantNameController,
+                          decoration:
+                              const InputDecoration(hintText: "Mijoz ismi"),
+                          validator: (v) {
+                            if (v!.isEmpty) {
+                              return "Bo'sh qoldirmang";
+                            } else {
+                              return null;
+                            }
+                          },
+                        ),
+                        Gap(10.h),
+                        TextFormField(
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          keyboardType: TextInputType.phone,
+                          inputFormatters: [
+                            FoxTextInputFormatter.phoneNumberFormatter
+                          ],
+                          controller: _phoneController,
+                          decoration:
+                              const InputDecoration(hintText: "Telefon raqami"),
+                        ),
+                        Gap(10.h),
+                      ],
+                    );
+                  }),
+                ),
+              ),
+            ),
             actions: [
               ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
+                  onPressed: () async {
+                    if (_formKey.currentState!.validate()) {
+                      final updatedClient = clientModel.copyWith(
+                          client_name: _tenantNameController.text,
+                          phone_number: _tenantNameController.text);
+                      context.read<ClientCubit>().updateClient(
+                          id: clientModel.id.toString(),
+                          rentModel: updatedClient);
+
+                      Navigator.of(context).pop();
+                    }
                   },
-                  child: const Text("Yo'q")),
-              ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    context.read<ProductCubit>().deleteClient(id: id);
-                  },
-                  child: const Text("Ha"))
+                  child: const Text("Yangilash"))
             ],
           );
         });
   }
-
-  DataRow _returnDataRow(
-      List<ClientModel> data, int index, BuildContext context) {
-    return DataRow(
-        onSelectChanged: (v) {
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(
-          //     builder: (context) => ProductDetailsPage(data: data[index]),
-          //   ),
-          // );
-        },
-        cells: [
-          DataCell(
-            Text("${index + 1}"),
-          ),
-          DataCell(
-            Text(data[index].client_name.toString()),
-          ),
-          // DataCell(Text(data[index].price!.sum.toString().formatMoney())),
-          // DataCell(Text(data[index].paid_dept!.sum.toString().formatMoney())),
-          // DataCell(Text(((num.tryParse(data[index]
-          //                 .price!
-          //                 .sum
-          //                 .toString()
-          //                 .pickOnlyNumbers()) ??
-          //             0) -
-          //         (num.tryParse(data[index]
-          //                 .paid_dept!
-          //                 .sum
-          //                 .toString()
-          //                 .pickOnlyNumbers()) ??
-          //             0))
-          //     .toString()
-          //     .formatMoney())),
-          // DataCell(
-          //   TextFormField(
-          //     readOnly: true,
-          //     initialValue: DateFormat(DateFormat.YEAR_MONTH_DAY)
-          //         .format(DateTime.parse(data[index].given_date.toString())),
-          //     decoration: const InputDecoration(
-          //         border: OutlineInputBorder(
-          //             borderSide: BorderSide(color: Colors.transparent)),
-          //         enabledBorder: OutlineInputBorder(
-          //             borderSide: BorderSide(color: Colors.transparent)),
-          //         focusedBorder: OutlineInputBorder(
-          //             borderSide: BorderSide(color: Colors.transparent)),
-          //         errorBorder: OutlineInputBorder(
-          //             borderSide: BorderSide(color: Colors.red)),
-          //         hintText: "Berilgan sana"),
-          //   ),
-          // ),
-          // DataCell(ElevatedButton(
-          //   onPressed: () {
-          //     _deleteClient(
-          //         data[index].id.toString(),
-          //         data[index].tenant_name.toString(),
-          //         data[index].product_type.toString());
-          //   },
-          //   child: const Text("O'chirish"),
-          // )),
-        ]);
-  }
-
-  // Future<void> _updateClient(RentModel updatedElement, int index) async {
-  //   await Future.delayed(const Duration(seconds: 2))
-  //       .then((value) => context.read<ProductCubit>().updateClient(
-  //           id: updatedElement.id.toString(),
-  //           rentModel: postClientModel(
-  //             tenantName: updatedElement.tenant_name.toString(),
-  //             productType: updatedElement.product_type.toString(),
-  //             price: PostPrice(
-  //                 currency: updatedElement.price!.currency,
-  //                 sum: num.tryParse(
-  //                         updatedElement.price.toString().pickOnlyNumbers()) ??
-  //                     0.0),
-  //             paidDept: PostPrice(
-  //                 currency: updatedElement.paid_dept!.currency,
-  //                 sum: num.tryParse(updatedElement.paid_dept
-  //                         .toString()
-  //                         .pickOnlyNumbers()) ??
-  //                     0.0),
-  //             givenDate: updatedElement.given_date.toString(),
-  //             phoneNumber: updatedElement.phone_number.toString(),
-  //           ),
-  //           createdAt: updatedElement.created_at.toString()));
-  // }
 }
