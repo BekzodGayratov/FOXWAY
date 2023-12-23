@@ -1,19 +1,16 @@
-import 'package:accountant/application/rent/rent_cubit.dart';
+import 'package:accountant/domain/client_model.dart';
 import 'package:accountant/domain/foxway_credentials.dart';
-import 'package:accountant/domain/post_rent_model.dart';
-import 'package:accountant/helpers/date_picker.dart';
 import 'package:accountant/helpers/input_formatters.dart';
 import 'package:accountant/presentation/extension/ext.dart';
 import 'package:accountant/presentation/pages/home/screens/employee_screen.dart';
 import 'package:accountant/presentation/pages/home/screens/manager_screen.dart';
 import 'package:accountant/presentation/pages/splash_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
-import 'package:intl/intl.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,22 +20,23 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late RentCubit _cubit;
-
   //CONTROLLERS
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _tenantNameController;
   late final TextEditingController _productTypeController;
+  late final TextEditingController _phoneController;
   late final TextEditingController _priceController;
   late final TextEditingController _paidDebtController;
   late final TextEditingController _givenDateController;
 
-  late final TextEditingController _phoneController;
+  //
+  late final CollectionReference<Map<String, dynamic>> clientCollection;
 
   ///
   String title = "Foxway";
 
-  late String _currency;
+  num totalSumUzs = 0.0;
+  num totalSumUsd = 0.0;
   @override
   void initState() {
     SystemChrome.setPreferredOrientations([
@@ -48,15 +46,14 @@ class _HomePageState extends State<HomePage> {
     ]);
     //CONTROLLERS
 
-    _currency = "sum";
-
     if (FirebaseAuth.instance.currentUser!.email ==
         FoxwayCredentials.managerEmail) {
-      title = "Foxway boshqaruvchisi";
+      title = "Boshqaruvchi";
     } else {
-      title = "Foxway xodimi";
+      title = "Xodim";
     }
 
+    clientCollection = FirebaseFirestore.instance.collection("clients");
     _tenantNameController = TextEditingController();
     _productTypeController = TextEditingController();
     _priceController = TextEditingController();
@@ -69,208 +66,77 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  void didChangeDependencies() {
-    _cubit = BlocProvider.of<RentCubit>(context);
-    super.didChangeDependencies();
-  }
-
-  @override
   void dispose() {
     _productTypeController.dispose();
     _priceController.dispose();
     _givenDateController.dispose();
     _phoneController.dispose();
     _tenantNameController.dispose();
-
-    if (_cubit.myStreamSubscription != null) {
-      _cubit.myStreamSubscription!.cancel();
-    }
+    _paidDebtController.dispose();
 
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<RentCubit, RentState>(
-      builder: (context, state) {
-        return Scaffold(
-          appBar: AppBar(
-            backgroundColor: Colors.blue,
-            elevation: 4,
-            centerTitle: true,
-            title: Text(
-              title,
-              style: const TextStyle(
-                  fontSize: 20.0,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white),
-            ),
-            actions: [
-              IconButton(
-                  onPressed: () {
-                    showLogoutDialog(context);
-                  },
-                  icon: const Icon(Icons.logout, color: Colors.white))
-            ],
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.amber,
+        elevation: 4,
+        leadingWidth: kToolbarHeight + 20.w,
+        toolbarHeight: kToolbarHeight + 20.h,
+        leading: SizedBox(
+          height: 160.0,
+          width: 160.w,
+          child: Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Image.asset("assets/logo.png", fit: BoxFit.fill),
           ),
-          body: FirebaseAuth.instance.currentUser!.email ==
-                  FoxwayCredentials.managerEmail
-              ? ManagerScreen(state: state)
-              : EmployeeScreen(state: state),
-          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-          floatingActionButton: FloatingActionButton(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            onPressed: () async {
-              await _showAddRentDialog(context);
-              setState(() {});
-            },
-            child: const Icon(Icons.add),
-          ),
-          bottomNavigationBar: state.when(
-              initial: () => null,
-              loading: () => null,
-              empty: () => null,
-              error: (err) => null,
-              success: (data) => SizedBox(
-                    height: 50.h,
-                    width: double.infinity,
-                    child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(0.0)),
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white),
-                        onPressed: () {
-                          showModalBottomSheet(
-                              backgroundColor: Colors.transparent,
-                              context: context,
-                              builder: (context) {
-                                return Padding(
-                                  padding: EdgeInsets.only(
-                                      bottom: 50.h, left: 10.w, right: 10.w),
-                                  child: Container(
-                                    width: double.infinity,
-                                    decoration: BoxDecoration(
-                                        color: Colors.blue,
-                                        borderRadius:
-                                            BorderRadius.circular(12.0)),
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: SingleChildScrollView(
-                                        child: Padding(
-                                          padding: EdgeInsets.symmetric(
-                                              horizontal: 15.w, vertical: 10.h),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  const Text(
-                                                    "Barcha ijara: ",
-                                                    style: TextStyle(
-                                                        fontSize: 20.0,
-                                                        fontWeight:
-                                                            FontWeight.w400,
-                                                        color: Colors.white),
-                                                  ),
-                                                  Text(
-                                                    " ${context.watch<RentCubit>().totalPriceSom.toString()} SO'M | ${context.watch<RentCubit>().totalPriceUsd.toString()} USD",
-                                                    style: TextStyle(
-                                                        fontSize: 20.0,
-                                                        fontStyle:
-                                                            FontStyle.italic,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color:
-                                                            Colors.yellow[400]),
-                                                  ),
-                                                ],
-                                              ),
-                                              Gap(10.h),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  const Text(
-                                                    "To'langan: ",
-                                                    style: TextStyle(
-                                                        fontSize: 20.0,
-                                                        fontWeight:
-                                                            FontWeight.w400,
-                                                        color: Colors.white),
-                                                  ),
-                                                  Text(
-                                                    " ${context.watch<RentCubit>().totalPaidDeptSom.toString()} SO'M | ${context.watch<RentCubit>().totalPaidDeptUsd.toString()} USD",
-                                                    style: TextStyle(
-                                                        fontSize: 20.0,
-                                                        fontStyle:
-                                                            FontStyle.italic,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color:
-                                                            Colors.yellow[400]),
-                                                  ),
-                                                ],
-                                              ),
-                                              Gap(10.h),
-                                              Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  const Text(
-                                                    "To'lanmagan: ",
-                                                    style: TextStyle(
-                                                        fontSize: 20.0,
-                                                        fontWeight:
-                                                            FontWeight.w400,
-                                                        color: Colors.white),
-                                                  ),
-                                                  Text(
-                                                    " ${context.watch<RentCubit>().totalDeptSom.toString()} SO'M | ${context.watch<RentCubit>().totalDeptUsd.toString()} USD",
-                                                    style: TextStyle(
-                                                        fontSize: 20.0,
-                                                        fontStyle:
-                                                            FontStyle.italic,
-                                                        fontWeight:
-                                                            FontWeight.w500,
-                                                        color:
-                                                            Colors.yellow[400]),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              });
-                        },
-                        child: const Text("Umumiy holatni ko'rish")),
-                  )),
-        );
-      },
+        ),
+        centerTitle: true,
+        title: Text(
+          title,
+          style: const TextStyle(
+              fontSize: 20.0, fontWeight: FontWeight.w500, color: Colors.white),
+        ),
+        actions: [
+          IconButton(
+              onPressed: () {
+                showLogoutDialog(context);
+              },
+              icon: const Icon(Icons.logout, color: Colors.white))
+        ],
+      ),
+      body: FirebaseAuth.instance.currentUser!.email ==
+              FoxwayCredentials.managerEmail
+          ? const ManagerScreen()
+          : const EmployeeScreen(),
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: Padding(
+        padding:  EdgeInsets.only(bottom: 100.h),
+        child: FloatingActionButton(
+          backgroundColor: Colors.amber,
+          foregroundColor: Colors.white,
+          onPressed: () async {
+            await _showAddClientDialog(context);
+            setState(() {});
+          },
+          child: const Icon(Icons.add),
+        ),
+      ),
     );
   }
 
-  Future<dynamic> _showAddRentDialog(BuildContext context) {
+  Future<dynamic> _showAddClientDialog(BuildContext context) {
     return showDialog(
         context: context,
-        builder: (context) {
+        builder: (ctx) {
           return AlertDialog(
             title: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const Text(
-                  "Arenda berish",
+                  "Mijoz qo'shish",
                   style: TextStyle(fontSize: 18.0),
                 ),
                 IconButton(
@@ -278,7 +144,7 @@ class _HomePageState extends State<HomePage> {
                       _productTypeController.clear();
                       _priceController.clear();
                       _givenDateController.clear();
-
+                      _paidDebtController.clear();
                       _phoneController.clear();
                       _tenantNameController.clear();
 
@@ -313,117 +179,6 @@ class _HomePageState extends State<HomePage> {
                         Gap(10.h),
                         TextFormField(
                           autovalidateMode: AutovalidateMode.onUserInteraction,
-                          controller: _productTypeController,
-                          decoration:
-                              const InputDecoration(hintText: "Tovar turi"),
-                          validator: (v) {
-                            if (v!.isEmpty) {
-                              return "Bo'sh qoldirmang";
-                            } else {
-                              return null;
-                            }
-                          },
-                        ),
-                        TextFormField(
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            NumericTextFormatter(),
-                          ],
-                          controller: _priceController,
-                          decoration: InputDecoration(
-                            hintText: "Narxi",
-                            suffixIcon: DropdownButtonHideUnderline(
-                              child: DropdownButton(
-                                  value: _currency,
-                                  items: const [
-                                    DropdownMenuItem(
-                                        value: "sum", child: Text("SO'M")),
-                                    DropdownMenuItem(
-                                        value: "usd", child: Text("USD"))
-                                  ],
-                                  onChanged: (v) {
-                                    setState(() {
-                                      _currency = v as String;
-                                    });
-                                  }),
-                            ),
-                          ),
-                          validator: (v) {
-                            if (v!.isEmpty) {
-                              return "Bo'sh qoldirmang";
-                            } else {
-                              return null;
-                            }
-                          },
-                        ),
-                        TextFormField(
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            NumericTextFormatter(),
-                          ],
-                          controller: _paidDebtController,
-                          decoration: InputDecoration(
-                            suffixIcon: DropdownButtonHideUnderline(
-                              child: DropdownButton(
-                                  value: _currency,
-                                  items: const [
-                                    DropdownMenuItem(
-                                        value: "sum", child: Text("SO'M")),
-                                    DropdownMenuItem(
-                                        value: "usd", child: Text("USD"))
-                                  ],
-                                  onChanged: (v) {
-                                    setState(() {
-                                      _currency = v as String;
-                                    });
-                                  }),
-                            ),
-                            hintText: "To'langan summa",
-                          ),
-                          validator: (v) {
-                            if (v!.isEmpty) {
-                              return "Bo'sh qoldirmang";
-                            } else if ((num.tryParse(_priceController.text
-                                        .pickOnlyNumbers()) ??
-                                    0) <
-                                (num.tryParse(v.pickOnlyNumbers()) ?? 0)) {
-                              return "Narxdan oshib ketdi";
-                            } else {
-                              return null;
-                            }
-                          },
-                        ),
-                        TextFormField(
-                          inputFormatters: [
-                            FoxTextInputFormatter.birthDateFormatter
-                          ],
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          onTap: () {
-                            _givenDateController.text =
-                                DateFormat('yyyy-MM-dd').format(DateTime.now());
-                            setState(() {});
-                            showFoxDatePicker(context, (dateTime) {
-                              setState(() {
-                                _givenDateController.text =
-                                    DateFormat('yyyy-MM-dd').format(dateTime);
-                              });
-                            });
-                          },
-                          controller: _givenDateController,
-                          decoration:
-                              const InputDecoration(hintText: "Berilgan sana"),
-                          validator: (v) {
-                            if (v!.isEmpty) {
-                              return "Bo'sh qoldirmang";
-                            } else {
-                              return null;
-                            }
-                          },
-                        ),
-                        TextFormField(
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
                           keyboardType: TextInputType.phone,
                           inputFormatters: [
                             FoxTextInputFormatter.phoneNumberFormatter
@@ -441,33 +196,25 @@ class _HomePageState extends State<HomePage> {
             ),
             actions: [
               ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     if (_formKey.currentState!.validate()) {
-                      context.read<RentCubit>().postRent(PostRentModel(
-                            tenantName: _tenantNameController.text,
-                            productType: _productTypeController.text,
-                            price: PostPrice(
-                                currency: _currency,
-                                sum: num.tryParse(_priceController.text
-                                        .pickOnlyNumbers()) ??
-                                    0.0),
-                            paidDept: PostPrice(
-                                currency: _currency,
-                                sum: num.tryParse(_paidDebtController.text
-                                        .pickOnlyNumbers()) ??
-                                    0.0),
-                            givenDate: _givenDateController.text,
-                            phoneNumber: _phoneController.text,
-                          ));
+                      clientCollection.add({
+                        "client_name": _tenantNameController.text,
+                        "phone_number": _phoneController.text,
+                        "created_at": DateTime.now().toString(),
+                        "updated_at": DateTime.now().toString(),
+                        "total_sum_uzs": 0.0,
+                        "total_sum_usd": 0.0,
+                      }).then((value) {
+                        _productTypeController.clear();
+                        _priceController.clear();
+                        _givenDateController.clear();
+                        _paidDebtController.clear();
+                        _phoneController.clear();
+                        _tenantNameController.clear();
+                      });
 
-                      _productTypeController.clear();
-                      _priceController.clear();
-                      _givenDateController.clear();
-
-                      _phoneController.clear();
-                      _tenantNameController.clear();
-
-                      Navigator.of(context).pop();
+                      Navigator.of(ctx).pop();
                     }
                   },
                   child: const Text("Qo'shish"))
@@ -502,3 +249,38 @@ void showLogoutDialog(BuildContext context) async {
         );
       });
 }
+// Container(
+//             height: 80.h,
+//             width: double.infinity,
+//             decoration: const BoxDecoration(
+//                 color: Colors.amber,
+//                 boxShadow: [BoxShadow(color: Colors.grey, blurRadius: 5.0)]),
+//             child: Padding(
+//               padding:
+//                   const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+//               child: Row(
+//                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                 children: [
+//                   const Text("Umumiy qoldiq:",
+//                       style: TextStyle(
+//                           fontSize: 20.0,
+//                           fontStyle: FontStyle.italic,
+//                           color: Colors.white)),
+//                   SingleChildScrollView(
+//                     child: Column(
+//                       crossAxisAlignment: CrossAxisAlignment.end,
+//                       children: [
+//                         Text(
+//                             "${totalSumUzs.toString().pickOnlyNumbers().formatMoney()} UZS",
+//                             style: const TextStyle(
+//                                 fontSize: 20.0, color: Colors.white)),
+//                         Text(
+//                             "${totalSumUsd.toString().pickOnlyNumbers().formatMoney()} USD",
+//                             style: const TextStyle(
+//                                 fontSize: 20.0, color: Colors.white)),
+//                       ],
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//             ))

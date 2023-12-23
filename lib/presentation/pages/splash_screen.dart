@@ -1,5 +1,6 @@
 import 'package:accountant/presentation/pages/auth/login_page.dart';
 import 'package:accountant/presentation/pages/home/home_page.dart';
+import 'package:accountant/presentation/pages/password_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -34,7 +35,7 @@ class _SplashScreenState extends State<SplashScreen> {
     if (user != null) {
       Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
+          MaterialPageRoute(builder: (context) => const PasswordPage()),
           (route) => false);
     } else {
       Navigator.pushAndRemoveUntil(
