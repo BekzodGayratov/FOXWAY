@@ -194,8 +194,6 @@ class _ManagerScreenState extends State<ManagerScreen> {
                 ),
                 IconButton(
                     onPressed: () {
-                      _productTypeController.clear();
-
                       _phoneController.clear();
                       _tenantNameController.clear();
 
@@ -251,7 +249,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
                     if (_formKey.currentState!.validate()) {
                       final updatedClient = clientModel.copyWith(
                           client_name: _tenantNameController.text,
-                          phone_number: _tenantNameController.text);
+                          phone_number: _phoneController.text);
                       clientCollection.doc(clientModel.id).update({
                         "client_name": updatedClient.client_name,
                         "phone_number": updatedClient.phone_number ?? "",
