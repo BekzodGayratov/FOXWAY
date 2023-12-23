@@ -4,6 +4,7 @@ import 'package:accountant/domain/price_model.dart';
 import 'package:accountant/domain/product_model.dart';
 import 'package:accountant/helpers/date_picker.dart';
 import 'package:accountant/helpers/input_formatters.dart';
+
 import 'package:accountant/presentation/extension/ext.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -32,11 +33,11 @@ class _EmployeeProductDetailsPageState
   late final TextEditingController _givenDateController;
   late String _currency;
 
-  late Stream<QuerySnapshot<Map<String, dynamic>>>? productsSnapshot;
+  late Future<QuerySnapshot<Map<String, dynamic>>>? productsSnapshot;
   late final CollectionReference<Map<String, dynamic>> productsCollection;
-  GlobalKey<_EmployeeProductDetailsPageState> _widgetKey = GlobalKey();
+  late final CollectionReference<Map<String, dynamic>> clientCollection;
 
-  //TOTAL
+  //
   double totalPriceUzs = 0.0;
   double totalPriceUsd = 0.0;
   @override
@@ -47,6 +48,7 @@ class _EmployeeProductDetailsPageState
       DeviceOrientation.portraitUp,
     ]);
     //CONTROLLERS
+    clientCollection = FirebaseFirestore.instance.collection("clients");
     productsCollection = FirebaseFirestore.instance
         .collection("clients")
         .doc(widget.element.id)
@@ -56,7 +58,8 @@ class _EmployeeProductDetailsPageState
         .doc(widget.element.id)
         .collection('products')
         .orderBy("created_at")
-        .snapshots();
+        .get();
+
     _currency = "sum";
 
     _productTypeController = TextEditingController();
@@ -75,6 +78,17 @@ class _EmployeeProductDetailsPageState
     _givenDateController.dispose();
     _paidDebtController.dispose();
     super.dispose();
+  }
+
+  Future<void> refreshData() async {
+    setState(() {
+      productsSnapshot = FirebaseFirestore.instance
+          .collection("clients")
+          .doc(widget.element.id)
+          .collection('products')
+          .orderBy("created_at")
+          .get();
+    });
   }
 
   @override
@@ -101,8 +115,8 @@ class _EmployeeProductDetailsPageState
           ],
         ),
       ),
-      body: StreamBuilder(
-          stream: productsSnapshot,
+      body: FutureBuilder(
+          future: productsSnapshot,
           builder: (context,
               AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
             if (snapshot.hasData) {
@@ -112,16 +126,11 @@ class _EmployeeProductDetailsPageState
               for (var i = 0; i < snapshot.data!.docs.length; i++) {
                 products[i].id = snapshot.data!.docs[i].id.toString();
               }
-              WidgetsBinding.instance.addPostFrameCallback((_) {
+
+              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
                 setState(() {
-                  calculateTotalPaidMoney(products);
-                 
+                  _calculateTotalPaidMoney(products);
                 });
-                 final updated = widget.element.copyWith(
-                      total_sum_usd: (totalPriceUsd / 10).toString(),
-                      total_sum_uzs: (totalPriceUzs / 10).toString());
-                  context.read<ClientCubit>().updateClient(
-                      id: widget.element.id.toString(), rentModel: updated);
               });
 
               return products.isEmpty
@@ -130,7 +139,6 @@ class _EmployeeProductDetailsPageState
                       scrollDirection: Axis.horizontal,
                       child: SingleChildScrollView(
                         child: DataTable(
-                          key: _widgetKey,
                           showCheckboxColumn: false,
                           headingTextStyle: const TextStyle(
                               color: Colors.black, fontWeight: FontWeight.w600),
@@ -143,7 +151,6 @@ class _EmployeeProductDetailsPageState
                             DataColumn(label: Text("To'landi")),
                             DataColumn(label: Text("Qoldiq")),
                             DataColumn(label: Text("Berilgan sana")),
-                            DataColumn(label: Text("O'chirish"))
                           ],
                           rows: List.generate(
                             products.length,
@@ -153,6 +160,7 @@ class _EmployeeProductDetailsPageState
                               ),
                               DataCell(
                                 TextFormField(
+                                  readOnly: true,
                                   initialValue:
                                       products[index].product_type ?? '',
                                   decoration: const InputDecoration(
@@ -186,6 +194,7 @@ class _EmployeeProductDetailsPageState
                               ),
                               DataCell(
                                 TextFormField(
+                                  keyboardType: TextInputType.number,
                                   readOnly: true,
                                   inputFormatters: [
                                     NumericTextFormatter(),
@@ -222,6 +231,7 @@ class _EmployeeProductDetailsPageState
                                     NumericTextFormatter(),
                                   ],
                                   keyboardType: TextInputType.number,
+                                  readOnly: false,
                                   autovalidateMode:
                                       AutovalidateMode.onUserInteraction,
                                   initialValue: products[index]
@@ -231,12 +241,11 @@ class _EmployeeProductDetailsPageState
                                       .formatMoney(),
                                   decoration: InputDecoration(
                                       isDense: true,
-                                      suffix: Text(products[index]
-                                                  .paid_money!
-                                                  .currency ==
-                                              "usd"
-                                          ? "USD "
-                                          : "SO'M "),
+                                      suffix: Text(
+                                          products[index].price!.currency ==
+                                                  "usd"
+                                              ? "USD "
+                                              : "SO'M "),
                                       border: const UnderlineInputBorder(
                                           borderSide: BorderSide(
                                               color: Colors.transparent)),
@@ -300,12 +309,11 @@ class _EmployeeProductDetailsPageState
                                       .formatMoney(),
                                   decoration: InputDecoration(
                                       isDense: true,
-                                      suffix: Text(products[index]
-                                                  .paid_money!
-                                                  .currency ==
-                                              "usd"
-                                          ? "USD "
-                                          : "SO'M "),
+                                      suffix: Text(
+                                          products[index].price!.currency ==
+                                                  "usd"
+                                              ? "USD "
+                                              : "SO'M "),
                                       border: const UnderlineInputBorder(
                                           borderSide: BorderSide(
                                               color: Colors.transparent)),
@@ -345,17 +353,6 @@ class _EmployeeProductDetailsPageState
                                       hintText: "Berilgan sana"),
                                 ),
                               ),
-                              DataCell(ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.amber,
-                                ),
-                                onPressed: () {
-                                  _deleteProduct(
-                                      widget.element, products[index]);
-                                },
-                                child: const Text("O'chirish",
-                                    style: TextStyle(color: Colors.white)),
-                              )),
                             ]),
                           ),
                         ),
@@ -516,11 +513,11 @@ class _EmployeeProductDetailsPageState
                                     });
                                   }),
                             ),
-                            hintText: "To'langan summa",
+                            hintText: "To'landi",
                           ),
                           validator: (v) {
                             if (v!.isEmpty) {
-                              return "Bo'sh qoldirmang";
+                              return null;
                             } else if ((num.tryParse(_priceController.text
                                         .pickOnlyNumbers()) ??
                                     0) <
@@ -574,38 +571,12 @@ class _EmployeeProductDetailsPageState
                         _priceController.clear();
                         _paidDebtController.clear();
                         _givenDateController.clear();
+                        refreshData();
                       });
                       Navigator.of(context).pop();
                     }
                   },
                   child: const Text("Qo'shish"))
-            ],
-          );
-        });
-  }
-
-  void _deleteProduct(ClientModel clientModel, ProductModel product) {
-    showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: ListTile(
-              title: Text("Ijarachi: ${clientModel.client_name}"),
-              subtitle: Text("Mahsulot: ${product.product_type}"),
-            ),
-            content: const Text("haqiqatdan o'chirmoqchimisiz?"),
-            actions: [
-              ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text("Yo'q")),
-              ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    productsCollection.doc(product.id).delete();
-                  },
-                  child: const Text("Ha"))
             ],
           );
         });
@@ -623,11 +594,11 @@ class _EmployeeProductDetailsPageState
           .toMap(),
       "given_date": product.given_date.toString(),
       "created_at": product.created_at.toString()
-    }).then((value) => forceUpdateWidget());
+    });
   }
 
   Future<void> _postProduct() async {
-    productsCollection.add({
+    await productsCollection.add({
       "product_type": _productTypeController.text,
       "price": Price(
               sum: num.tryParse(_priceController.text.pickOnlyNumbers()) ?? 0.0,
@@ -643,7 +614,7 @@ class _EmployeeProductDetailsPageState
     });
   }
 
-  void calculateTotalPaidMoney(List<ProductModel> products) {
+  void _calculateTotalPaidMoney(List<ProductModel> products) {
     totalPriceUzs = 0.0;
     totalPriceUsd = 0.0;
     for (var element in products) {
@@ -655,11 +626,5 @@ class _EmployeeProductDetailsPageState
             (element.price!.sum ?? 0.0) - (element.paid_money!.sum ?? 0.0);
       }
     }
-  }
-
-  void forceUpdateWidget() {
-    setState(() {
-      _widgetKey = GlobalKey();
-    });
   }
 }

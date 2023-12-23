@@ -32,11 +32,11 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
   late final TextEditingController _givenDateController;
   late String _currency;
 
-  late Stream<QuerySnapshot<Map<String, dynamic>>>? productsSnapshot;
+  late Future<QuerySnapshot<Map<String, dynamic>>>? productsSnapshot;
   late final CollectionReference<Map<String, dynamic>> productsCollection;
-  GlobalKey<_ManagerProductDetailsPageState> _widgetKey = GlobalKey();
+  late final CollectionReference<Map<String, dynamic>> clientCollection;
 
-  //TOTAL
+  //
   double totalPriceUzs = 0.0;
   double totalPriceUsd = 0.0;
   @override
@@ -47,6 +47,7 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
       DeviceOrientation.portraitUp,
     ]);
     //CONTROLLERS
+    clientCollection = FirebaseFirestore.instance.collection("clients");
     productsCollection = FirebaseFirestore.instance
         .collection("clients")
         .doc(widget.element.id)
@@ -56,7 +57,8 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
         .doc(widget.element.id)
         .collection('products')
         .orderBy("created_at")
-        .snapshots();
+        .get();
+
     _currency = "sum";
 
     _productTypeController = TextEditingController();
@@ -75,6 +77,17 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
     _givenDateController.dispose();
     _paidDebtController.dispose();
     super.dispose();
+  }
+
+  Future<void> refreshData() async {
+    setState(() {
+      productsSnapshot = FirebaseFirestore.instance
+          .collection("clients")
+          .doc(widget.element.id)
+          .collection('products')
+          .orderBy("created_at")
+          .get();
+    });
   }
 
   @override
@@ -101,8 +114,8 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
           ],
         ),
       ),
-      body: StreamBuilder(
-          stream: productsSnapshot,
+      body: FutureBuilder(
+          future: productsSnapshot,
           builder: (context,
               AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
             if (snapshot.hasData) {
@@ -112,15 +125,11 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
               for (var i = 0; i < snapshot.data!.docs.length; i++) {
                 products[i].id = snapshot.data!.docs[i].id.toString();
               }
-              WidgetsBinding.instance.addPostFrameCallback((_) {
+
+              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
                 setState(() {
-                  calculateTotalPaidMoney(products);
+                  _calculateTotalPaidMoney(products);
                 });
-                final updated = widget.element.copyWith(
-                    total_sum_usd: (totalPriceUsd / 10).toString(),
-                    total_sum_uzs: (totalPriceUzs / 10).toString());
-                context.read<ClientCubit>().updateClient(
-                    id: widget.element.id.toString(), rentModel: updated);
               });
 
               return products.isEmpty
@@ -129,7 +138,6 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
                       scrollDirection: Axis.horizontal,
                       child: SingleChildScrollView(
                         child: DataTable(
-                          key: _widgetKey,
                           showCheckboxColumn: false,
                           headingTextStyle: const TextStyle(
                               color: Colors.black, fontWeight: FontWeight.w600),
@@ -252,12 +260,11 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
                                       .formatMoney(),
                                   decoration: InputDecoration(
                                       isDense: true,
-                                      suffix: Text(products[index]
-                                                  .price!
-                                                  .currency ==
-                                              "usd"
-                                          ? "USD "
-                                          : "SO'M "),
+                                      suffix: Text(
+                                          products[index].price!.currency ==
+                                                  "usd"
+                                              ? "USD "
+                                              : "SO'M "),
                                       border: const UnderlineInputBorder(
                                           borderSide: BorderSide(
                                               color: Colors.transparent)),
@@ -321,12 +328,11 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
                                       .formatMoney(),
                                   decoration: InputDecoration(
                                       isDense: true,
-                                      suffix: Text(products[index]
-                                                  .price!
-                                                  .currency ==
-                                              "usd"
-                                          ? "USD "
-                                          : "SO'M "),
+                                      suffix: Text(
+                                          products[index].price!.currency ==
+                                                  "usd"
+                                              ? "USD "
+                                              : "SO'M "),
                                       border: const UnderlineInputBorder(
                                           borderSide: BorderSide(
                                               color: Colors.transparent)),
@@ -372,7 +378,7 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
                                 ),
                                 onPressed: () {
                                   _deleteProduct(
-                                      widget.element, products[index]);
+                                      widget.element, products, index);
                                 },
                                 child: const Text("O'chirish",
                                     style: TextStyle(color: Colors.white)),
@@ -541,7 +547,7 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
                           ),
                           validator: (v) {
                             if (v!.isEmpty) {
-                              return "Bo'sh qoldirmang";
+                              return null;
                             } else if ((num.tryParse(_priceController.text
                                         .pickOnlyNumbers()) ??
                                     0) <
@@ -595,6 +601,7 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
                         _priceController.clear();
                         _paidDebtController.clear();
                         _givenDateController.clear();
+                        refreshData();
                       });
                       Navigator.of(context).pop();
                     }
@@ -605,14 +612,15 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
         });
   }
 
-  void _deleteProduct(ClientModel clientModel, ProductModel product) {
+  Future<void> _deleteProduct(
+      ClientModel clientModel, List<ProductModel> products, int index) async {
     showDialog(
         context: context,
         builder: (context) {
           return AlertDialog(
             title: ListTile(
               title: Text("Ijarachi: ${clientModel.client_name}"),
-              subtitle: Text("Mahsulot: ${product.product_type}"),
+              subtitle: Text("Mahsulot: ${products[index].product_type}"),
             ),
             content: const Text("haqiqatdan o'chirmoqchimisiz?"),
             actions: [
@@ -624,7 +632,10 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
               ElevatedButton(
                   onPressed: () {
                     Navigator.of(context).pop();
-                    productsCollection.doc(product.id).delete();
+                    productsCollection
+                        .doc(products[index].id)
+                        .delete()
+                        .then((value) => refreshData());
                   },
                   child: const Text("Ha"))
             ],
@@ -644,13 +655,11 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
           .toMap(),
       "given_date": product.given_date.toString(),
       "created_at": product.created_at.toString()
-    }).then((value) {
-      forceUpdateWidget();
     });
   }
 
   Future<void> _postProduct() async {
-    productsCollection.add({
+    await productsCollection.add({
       "product_type": _productTypeController.text,
       "price": Price(
               sum: num.tryParse(_priceController.text.pickOnlyNumbers()) ?? 0.0,
@@ -666,7 +675,7 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
     });
   }
 
-  void calculateTotalPaidMoney(List<ProductModel> products) {
+  void _calculateTotalPaidMoney(List<ProductModel> products) {
     totalPriceUzs = 0.0;
     totalPriceUsd = 0.0;
     for (var element in products) {
@@ -678,11 +687,5 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage> {
             (element.price!.sum ?? 0.0) - (element.paid_money!.sum ?? 0.0);
       }
     }
-  }
-
-  void forceUpdateWidget() {
-    setState(() {
-      _widgetKey = GlobalKey();
-    });
   }
 }

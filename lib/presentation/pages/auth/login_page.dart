@@ -1,6 +1,8 @@
 import 'package:accountant/application/login/login_cubit.dart';
 import 'package:accountant/helpers/show_message.dart';
 import 'package:accountant/presentation/pages/home/home_page.dart';
+import 'package:accountant/presentation/pages/set_password/set_password_page.dart';
+import 'package:accountant/presentation/pages/password_page.dart';
 import 'package:accountant/presentation/widgets/loading.dart';
 import 'package:accountant/presentation/widgets/padding.dart';
 import 'package:flutter/material.dart';
@@ -35,7 +37,8 @@ class _LoginPageState extends State<LoginPage> {
             error: (err) => showFoxMessage(err),
             success: () => Navigator.pushAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (context) => const HomePage()),
+                MaterialPageRoute(
+                    builder: (context) => const SetPasswordPage()),
                 (route) => false));
       },
       builder: (context, state) {

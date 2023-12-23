@@ -11,8 +11,8 @@ class ClientModel {
   final String? phone_number;
   final String? created_at;
   final String? updated_at;
-  final String? total_sum_uzs;
-  final String? total_sum_usd;
+  final num? total_sum_uzs;
+  final num? total_sum_usd;
   ClientModel({
     this.id,
     this.client_name,
@@ -23,7 +23,7 @@ class ClientModel {
     this.total_sum_uzs,
     this.total_sum_usd,
   });
-  
+
 
   ClientModel copyWith({
     String? id,
@@ -32,8 +32,8 @@ class ClientModel {
     String? phone_number,
     String? created_at,
     String? updated_at,
-    String? total_sum_uzs,
-    String? total_sum_usd,
+    num? total_sum_uzs,
+    num? total_sum_usd,
   }) {
     return ClientModel(
       id: id ?? this.id,
@@ -68,8 +68,8 @@ class ClientModel {
       phone_number: map['phone_number'] != null ? map['phone_number'] as String : null,
       created_at: map['created_at'] != null ? map['created_at'] as String : null,
       updated_at: map['updated_at'] != null ? map['updated_at'] as String : null,
-      total_sum_uzs: map['total_sum_uzs'] != null ? map['total_sum_uzs'] as String : null,
-      total_sum_usd: map['total_sum_usd'] != null ? map['total_sum_usd'] as String : null,
+      total_sum_uzs: map['total_sum_uzs'] != null ? map['total_sum_uzs'] as num : null,
+      total_sum_usd: map['total_sum_usd'] != null ? map['total_sum_usd'] as num : null,
     );
   }
 
