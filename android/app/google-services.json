@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "901601832677",
-    "project_id": "foxway-795a8",
-    "storage_bucket": "foxway-795a8.appspot.com"
+    "project_number": "177227119391",
+    "project_id": "foxway-41c60",
+    "storage_bucket": "foxway-41c60.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:901601832677:android:11567b970ce11469c3ae0c",
+        "mobilesdk_app_id": "1:177227119391:android:e6f2fbf7d288b313f3ce2a",
         "android_client_info": {
           "package_name": "com.example.accountant"
         }
@@ -15,7 +15,7 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyBBYbeVjstgEzM8qh6fUHL5j3TQNVB2Bc0"
+          "current_key": "AIzaSyBoYGcS6r4up9JuIwRnpervNW8eKVMAD6s"
         }
       ],
       "services": {

@@ -391,12 +391,12 @@ class _ManagerProductTabState extends State<ManagerProductTab>
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
-                                          "${(SumController.totalSumUzs - totalPriceUzs).toString().formatMoney()} UZS",
+                                          "${((SumController.totalSumUzs - totalPriceUzs) / 10).toString().pickOnlyNumbers().formatMoney()} UZS",
                                           style: const TextStyle(
                                               fontSize: 20.0,
                                               color: Colors.white)),
                                       Text(
-                                          "${(SumController.totalSumUsd - totalPriceUsd).toString().formatMoney()} USD",
+                                          "${((SumController.totalSumUsd - totalPriceUsd) / 10).toString().pickOnlyNumbers().formatMoney()} USD",
                                           style: const TextStyle(
                                               fontSize: 20.0,
                                               color: Colors.white)),

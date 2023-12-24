@@ -230,7 +230,7 @@ class _ManagerSumTabState extends State<ManagerSumTab>
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
-                                          "${totalPriceUzs.toString().formatMoney()} UZS",
+                                          "${(totalPriceUzs).toString().formatMoney()} UZS",
                                           style: const TextStyle(
                                               fontSize: 20.0,
                                               color: Colors.white)),

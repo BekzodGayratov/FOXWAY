@@ -61,11 +61,11 @@ class _EmployeeProductDetailsPageState extends State<EmployeeProductDetailsPage>
             indicatorColor: Colors.white,
             labelColor: Colors.white,
             controller: _tabController,
-            tabs: const [Tab(text: "Aylanma pullar"), Tab(text: "Tovarlar")]),
+            tabs: const [Tab(text: "Tovarlar"), Tab(text: "Aylanma pullar")]),
       ),
       body: TabBarView(controller: _tabController, children: [
+        EmployeeProductTab(element: widget.element),
         EmployeeSumTab(element: widget.element),
-        EmployeeProductTab(element: widget.element)
       ]),
     );
   }

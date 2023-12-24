@@ -123,12 +123,12 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.end,
                                   children: [
                                     Text(
-                                        "${totalSumUzs.toString().formatMoney()} UZS",
+                                        "${(totalSumUzs / 10).toString().pickOnlyNumbers().formatMoney()} UZS",
                                         style: const TextStyle(
                                             fontSize: 20.0,
                                             color: Colors.white)),
                                     Text(
-                                        "${totalSumUsd.toString().formatMoney()} USD",
+                                        "${(totalSumUsd / 10).toString().pickOnlyNumbers().formatMoney()} USD",
                                         style: const TextStyle(
                                             fontSize: 20.0,
                                             color: Colors.white)),
@@ -556,11 +556,11 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                        "${data[index].total_sum_usd.toString().formatMoney()} USD",
+                        "${(data[index].total_sum_uzs! / 10).toString().pickOnlyNumbers().formatMoney()} UZS",
                         style: const TextStyle(
                             fontSize: 16.0, fontWeight: FontWeight.w400)),
                     Text(
-                        "${data[index].total_sum_uzs.toString().formatMoney()} UZS",
+                        "${(data[index].total_sum_usd! / 10).toString().pickOnlyNumbers().formatMoney()} USD",
                         style: const TextStyle(
                             fontSize: 16.0, fontWeight: FontWeight.w400)),
                   ],

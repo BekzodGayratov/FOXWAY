@@ -112,7 +112,7 @@ class _HomePageState extends State<HomePage> {
           : const EmployeeScreen(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
       floatingActionButton: Padding(
-        padding:  EdgeInsets.only(bottom: 100.h),
+        padding: EdgeInsets.only(bottom: 100.h),
         child: FloatingActionButton(
           backgroundColor: Colors.amber,
           foregroundColor: Colors.white,
