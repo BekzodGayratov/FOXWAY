@@ -2,7 +2,7 @@ import 'package:accountant/domain/client_model.dart';
 import 'package:accountant/domain/product_model.dart';
 import 'package:accountant/helpers/input_formatters.dart';
 import 'package:accountant/presentation/extension/ext.dart';
-import 'package:accountant/presentation/pages/details/manager_product_details_page.dart';
+import 'package:accountant/presentation/pages/details/employe/employee_product_details_page.dart';
 import 'package:accountant/presentation/widgets/padding.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -532,7 +532,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ManagerProductDetailsPage(
+                  builder: (context) => EmployeeProductDetailsPage(
                     element: data[index],
                   ),
                 ),

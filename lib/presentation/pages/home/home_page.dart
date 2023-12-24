@@ -1,7 +1,6 @@
 import 'package:accountant/domain/client_model.dart';
 import 'package:accountant/domain/foxway_credentials.dart';
 import 'package:accountant/helpers/input_formatters.dart';
-import 'package:accountant/presentation/extension/ext.dart';
 import 'package:accountant/presentation/pages/home/screens/employee_screen.dart';
 import 'package:accountant/presentation/pages/home/screens/manager_screen.dart';
 import 'package:accountant/presentation/pages/splash_screen.dart';

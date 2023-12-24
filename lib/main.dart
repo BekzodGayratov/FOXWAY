@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get_storage/get_storage.dart';
@@ -17,7 +18,7 @@ void main() async {
   );
 
   FirebaseFirestore.instance.settings =
-      const Settings(persistenceEnabled: true);
+      const Settings(persistenceEnabled: false);
 
   await FirebaseAppCheck.instance
       // Your personal reCaptcha public key goes here:
@@ -38,6 +39,9 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
     return ScreenUtilInit(
       builder: (context, child) {
         return const MaterialApp(

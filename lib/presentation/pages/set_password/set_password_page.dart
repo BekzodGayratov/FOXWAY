@@ -50,7 +50,7 @@ class _SetPasswordPageState extends State<SetPasswordPage> {
                   height: 100.h,
                   width: 100.w,
                   child: Image.asset("assets/logo.png", fit: BoxFit.fill)),
-              Gap(100.h),
+              Gap(50.h),
               TextFormField(
                 maxLines: 1,
                 controller: _passwordController,

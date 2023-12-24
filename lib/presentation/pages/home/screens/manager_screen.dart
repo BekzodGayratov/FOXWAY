@@ -1,8 +1,7 @@
 import 'package:accountant/domain/client_model.dart';
-import 'package:accountant/domain/product_model.dart';
 import 'package:accountant/helpers/input_formatters.dart';
 import 'package:accountant/presentation/extension/ext.dart';
-import 'package:accountant/presentation/pages/details/manager_product_details_page.dart';
+import 'package:accountant/presentation/pages/details/manager/manager_product_details_page.dart';
 import 'package:accountant/presentation/widgets/padding.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -592,28 +591,28 @@ class _ManagerScreenState extends State<ManagerScreen> {
                         const Text("Tahrirlash")
                       ],
                     )),
-                PopupMenuItem(
-                    onTap: () {
-                      _removeMoneyToClientSum(context, data[index]);
-                    },
-                    child: Row(
-                      children: [
-                        const Icon(Icons.remove),
-                        Gap(5.w),
-                        const Text("Aylanma puldan ayirish")
-                      ],
-                    )),
-                PopupMenuItem(
-                    onTap: () {
-                      _addMoneyToClientSum(context, data[index]);
-                    },
-                    child: Row(
-                      children: [
-                        const Icon(Icons.add),
-                        Gap(5.w),
-                        const Text("Aylanma pulga qo'shish")
-                      ],
-                    )),
+                // PopupMenuItem(
+                //     onTap: () {
+                //       _removeMoneyToClientSum(context, data[index]);
+                //     },
+                //     child: Row(
+                //       children: [
+                //         const Icon(Icons.remove),
+                //         Gap(5.w),
+                //         const Text("Aylanma puldan ayirish")
+                //       ],
+                //     )),
+                // PopupMenuItem(
+                //     onTap: () {
+                //       _addMoneyToClientSum(context, data[index]);
+                //     },
+                //     child: Row(
+                //       children: [
+                //         const Icon(Icons.add),
+                //         Gap(5.w),
+                //         const Text("Aylanma pulga qo'shish")
+                //       ],
+                //     )),
               ];
             })),
       ),
