@@ -73,7 +73,8 @@ class _EmployeeSumTabState extends State<EmployeeSumTab>
 
     super.dispose();
   }
-      Future<void> refreshData() async {
+
+  Future<void> refreshData() async {
     setState(() {
       // Reinitialize the future to trigger a rebuild
       sumSnapshot = FirebaseFirestore.instance
@@ -84,7 +85,6 @@ class _EmployeeSumTabState extends State<EmployeeSumTab>
           .get();
     });
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -102,23 +102,23 @@ class _EmployeeSumTabState extends State<EmployeeSumTab>
                 for (var i = 0; i < snapshot.data!.docs.length; i++) {
                   sums[i].id = snapshot.data!.docs[i].id.toString();
                 }
-        
+
                 _calculateTotalPaidMoney(sums);
-        
+
                 return sums.isEmpty
                     ? RefreshIndicator(
-                      onRefresh: refreshData,
-                      child: Center(
-                        child: ListView(
-                          children: [
-                            Gap(100.h),
-                           const Align(
-                                alignment: Alignment.center,
-                                child: Text("Summalar mavjud emas")),
-                          ],
+                        onRefresh: refreshData,
+                        child: Center(
+                          child: ListView(
+                            children: [
+                              Gap(100.h),
+                              const Align(
+                                  alignment: Alignment.center,
+                                  child: Text("Summalar mavjud emas")),
+                            ],
+                          ),
                         ),
-                      ),
-                    )
+                      )
                     : Scaffold(
                         body: SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
@@ -128,8 +128,8 @@ class _EmployeeSumTabState extends State<EmployeeSumTab>
                               headingTextStyle: const TextStyle(
                                   color: Colors.black,
                                   fontWeight: FontWeight.w600),
-                              border:
-                                  TableBorder.all(color: const Color(0xffF2F4F7)),
+                              border: TableBorder.all(
+                                  color: const Color(0xffF2F4F7)),
                               columns: const [
                                 DataColumn(label: Text("#")),
                                 DataColumn(label: Text("Pul qiymati")),
@@ -161,12 +161,16 @@ class _EmployeeSumTabState extends State<EmployeeSumTab>
                                           border: const OutlineInputBorder(
                                               borderSide: BorderSide(
                                                   color: Colors.transparent)),
-                                          enabledBorder: const OutlineInputBorder(
-                                              borderSide: BorderSide(
-                                                  color: Colors.transparent)),
-                                          focusedBorder: const OutlineInputBorder(
-                                              borderSide: BorderSide(
-                                                  color: Colors.transparent)),
+                                          enabledBorder:
+                                              const OutlineInputBorder(
+                                                  borderSide: BorderSide(
+                                                      color: Colors
+                                                          .transparent)),
+                                          focusedBorder:
+                                              const OutlineInputBorder(
+                                                  borderSide: BorderSide(
+                                                      color:
+                                                          Colors.transparent)),
                                           errorBorder: const OutlineInputBorder(
                                               borderSide:
                                                   BorderSide(color: Colors.red)),
@@ -195,10 +199,11 @@ class _EmployeeSumTabState extends State<EmployeeSumTab>
                                   DataCell(
                                     TextFormField(
                                       readOnly: true,
-                                      initialValue: DateFormat(
-                                              DateFormat.YEAR_MONTH_DAY)
-                                          .format(DateTime.parse(
-                                              sums[index].given_date.toString())),
+                                      initialValue:
+                                          DateFormat(DateFormat.YEAR_MONTH_DAY)
+                                              .format(DateTime.parse(sums[index]
+                                                  .given_date
+                                                  .toString())),
                                       decoration: const InputDecoration(
                                           border: OutlineInputBorder(
                                               borderSide: BorderSide(
@@ -210,8 +215,8 @@ class _EmployeeSumTabState extends State<EmployeeSumTab>
                                               borderSide: BorderSide(
                                                   color: Colors.transparent)),
                                           errorBorder: OutlineInputBorder(
-                                              borderSide:
-                                                  BorderSide(color: Colors.red)),
+                                              borderSide: BorderSide(
+                                                  color: Colors.red)),
                                           hintText: "Berilgan sana"),
                                     ),
                                   ),
@@ -232,7 +237,8 @@ class _EmployeeSumTabState extends State<EmployeeSumTab>
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 8.0, vertical: 8.0),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   const Text("Umumiy qoldiq:",
                                       style: TextStyle(
@@ -241,7 +247,8 @@ class _EmployeeSumTabState extends State<EmployeeSumTab>
                                           color: Colors.white)),
                                   SingleChildScrollView(
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.end,
                                       children: [
                                         Text(
                                             "${totalPriceUzs.toString().formatMoney()} UZS",
@@ -279,7 +286,7 @@ class _EmployeeSumTabState extends State<EmployeeSumTab>
             onPressed: () {
               _showAddSumDialog(context);
             },
-            child: const Icon(Icons.remove)),
+            child: const Icon(Icons.add)),
       ),
     );
   }
@@ -412,18 +419,22 @@ class _EmployeeSumTabState extends State<EmployeeSumTab>
   }
 
   Future<void> _calculateTotalPaidMoney(List<SumModel> sums) async {
-    totalPriceUzs = 0.0;
-    totalPriceUsd = 0.0;
-    for (var element in sums) {
-      if (element.sum!.currency == "sum") {
-        totalPriceUzs += element.sum!.sum ?? 0;
-      } else {
-        totalPriceUsd += element.sum!.sum ?? 0;
+    if (sums.isNotEmpty) {
+      totalPriceUzs = 0.0;
+      totalPriceUsd = 0.0;
+      for (var element in sums) {
+        if (element.sum != null) {
+          if (element.sum!.currency == "sum") {
+            totalPriceUzs += element.sum!.sum ?? 0;
+          } else {
+            totalPriceUsd += element.sum!.sum ?? 0;
+          }
+        }
       }
-    }
-    SumController.totalSumUzs = totalPriceUzs;
-    SumController.totalSumUsd = totalPriceUsd;
+      SumController.totalSumUzs = totalPriceUzs;
+      SumController.totalSumUsd = totalPriceUsd;
 
-    setState(() {});
+      setState(() {});
+    }
   }
 }
