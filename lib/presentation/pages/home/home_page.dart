@@ -1,7 +1,6 @@
 import 'package:accountant/domain/client_model.dart';
 import 'package:accountant/domain/foxway_credentials.dart';
 import 'package:accountant/helpers/input_formatters.dart';
-import 'package:accountant/presentation/extension/ext.dart';
 import 'package:accountant/presentation/pages/home/screens/employee_screen.dart';
 import 'package:accountant/presentation/pages/home/screens/manager_screen.dart';
 import 'package:accountant/presentation/pages/splash_screen.dart';
@@ -112,17 +111,14 @@ class _HomePageState extends State<HomePage> {
           ? const ManagerScreen()
           : const EmployeeScreen(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: Padding(
-        padding:  EdgeInsets.only(bottom: 100.h),
-        child: FloatingActionButton(
-          backgroundColor: Colors.amber,
-          foregroundColor: Colors.white,
-          onPressed: () async {
-            await _showAddClientDialog(context);
-            setState(() {});
-          },
-          child: const Icon(Icons.add),
-        ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.amber,
+        foregroundColor: Colors.white,
+        onPressed: () async {
+          await _showAddClientDialog(context);
+          setState(() {});
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -212,6 +208,7 @@ class _HomePageState extends State<HomePage> {
                         _paidDebtController.clear();
                         _phoneController.clear();
                         _tenantNameController.clear();
+                        setState(() {});
                       });
 
                       Navigator.of(ctx).pop();

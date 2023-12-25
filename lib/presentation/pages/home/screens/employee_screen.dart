@@ -1,8 +1,7 @@
 import 'package:accountant/domain/client_model.dart';
-import 'package:accountant/domain/product_model.dart';
 import 'package:accountant/helpers/input_formatters.dart';
 import 'package:accountant/presentation/extension/ext.dart';
-import 'package:accountant/presentation/pages/details/manager_product_details_page.dart';
+import 'package:accountant/presentation/pages/details/employe/employee_product_details_page.dart';
 import 'package:accountant/presentation/widgets/padding.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -21,29 +20,26 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
   late final TextEditingController _tenantNameController;
   late final TextEditingController _productTypeController;
   late final TextEditingController _phoneController;
-  late final TextEditingController _priceController;
   final _formKey = GlobalKey<FormState>();
 
   //
-  late Stream<QuerySnapshot<Map<String, dynamic>>>? clientSnapshot;
+  late Future<QuerySnapshot<Map<String, dynamic>>>? clientSnapshot;
   late final CollectionReference<Map<String, dynamic>> clientCollection;
-  late String _currency;
+
   num totalSumUzs = 0.0;
   num totalSumUsd = 0.0;
 
   @override
   void initState() {
-    _priceController = TextEditingController();
     _tenantNameController = TextEditingController();
     _productTypeController = TextEditingController();
     _phoneController = TextEditingController();
-    _currency = "sum";
 
     clientCollection = FirebaseFirestore.instance.collection("clients");
     clientSnapshot = FirebaseFirestore.instance
         .collection("clients")
         .orderBy("created_at")
-        .snapshots();
+        .get();
 
     super.initState();
   }
@@ -56,10 +52,20 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
     super.dispose();
   }
 
+  Future<void> refreshData() async {
+    setState(() {
+      // Reinitialize the future to trigger a rebuild
+      clientSnapshot = FirebaseFirestore.instance
+          .collection("clients")
+          .orderBy("created_at")
+          .get();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-        stream: clientSnapshot,
+    return FutureBuilder(
+        future: clientSnapshot,
         builder: (context,
             AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
           if (snapshot.hasData) {
@@ -77,8 +83,18 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
             }
 
             return data.isEmpty
-                ? const Center(
-                    child: Text("Mijozlar mavjud emas"),
+                ? RefreshIndicator(
+                    onRefresh: refreshData,
+                    child: Center(
+                      child: ListView(
+                        children: [
+                          Gap(100.h),
+                          const Align(
+                              alignment: Alignment.center,
+                              child: Text("Mijozlar mavjud emas")),
+                        ],
+                      ),
+                    ),
                   )
                 : Scaffold(
                     body: Padding(
@@ -99,45 +115,6 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                             );
                           }),
                     ),
-                    bottomNavigationBar: Container(
-                        height: 80.h,
-                        width: double.infinity,
-                        decoration: const BoxDecoration(
-                            color: Colors.amber,
-                            boxShadow: [
-                              BoxShadow(color: Colors.grey, blurRadius: 5.0)
-                            ]),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0, vertical: 8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text("Umumiy qoldiq:",
-                                  style: TextStyle(
-                                      fontSize: 20.0,
-                                      fontStyle: FontStyle.italic,
-                                      color: Colors.white)),
-                              SingleChildScrollView(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                        "${totalSumUzs.toString().formatMoney()} UZS",
-                                        style: const TextStyle(
-                                            fontSize: 20.0,
-                                            color: Colors.white)),
-                                    Text(
-                                        "${totalSumUsd.toString().formatMoney()} USD",
-                                        style: const TextStyle(
-                                            fontSize: 20.0,
-                                            color: Colors.white)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        )),
                   );
           } else if (!snapshot.hasData) {
             return const Center(
@@ -148,32 +125,6 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
           } else {
             return const SizedBox.shrink();
           }
-        });
-  }
-
-  void _deleteClient(String id, String tenant) {
-    showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: ListTile(
-              title: Text("Mijoz: $tenant"),
-            ),
-            content: const Text("haqiqatdan o'chirmoqchimisiz?"),
-            actions: [
-              ElevatedButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text("Yo'q")),
-              ElevatedButton(
-                  onPressed: () {
-                    clientCollection.doc(id).delete();
-                    Navigator.of(context).pop();
-                  },
-                  child: const Text("Ha"))
-            ],
-          );
         });
   }
 
@@ -194,8 +145,6 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                 ),
                 IconButton(
                     onPressed: () {
-                      _productTypeController.clear();
-
                       _phoneController.clear();
                       _tenantNameController.clear();
 
@@ -251,7 +200,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                     if (_formKey.currentState!.validate()) {
                       final updatedClient = clientModel.copyWith(
                           client_name: _tenantNameController.text,
-                          phone_number: _tenantNameController.text);
+                          phone_number: _phoneController.text);
                       clientCollection.doc(clientModel.id).update({
                         "client_name": updatedClient.client_name,
                         "phone_number": updatedClient.phone_number ?? "",
@@ -262,245 +211,6 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                       });
 
                       Navigator.of(context).pop();
-                    }
-                  },
-                  child: const Text("Yangilash"))
-            ],
-          );
-        });
-  }
-
-  Future<dynamic> _addMoneyToClientSum(
-      BuildContext context, ClientModel clientModel) {
-    return showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Pulni qo'shish",
-                  style: TextStyle(fontSize: 18.0),
-                ),
-                IconButton(
-                    onPressed: () {
-                      _priceController.clear();
-
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.cancel_outlined))
-              ],
-            ),
-            content: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 16.h),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: StatefulBuilder(builder: (context, setState) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                            "${clientModel.client_name} dan siz qancha pul oldingiz?"),
-                        Gap(10.h),
-                        TextFormField(
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            NumericTextFormatter(),
-                          ],
-                          controller: _priceController,
-                          decoration: InputDecoration(
-                            hintText: "Narxi",
-                            suffixIcon: DropdownButtonHideUnderline(
-                              child: DropdownButton(
-                                  value: _currency,
-                                  items: const [
-                                    DropdownMenuItem(
-                                        value: "sum", child: Text("SO'M")),
-                                    DropdownMenuItem(
-                                        value: "usd", child: Text("USD"))
-                                  ],
-                                  onChanged: (v) {
-                                    setState(() {
-                                      _currency = v as String;
-                                    });
-                                  }),
-                            ),
-                          ),
-                        ),
-                        Gap(10.h),
-                      ],
-                    );
-                  }),
-                ),
-              ),
-            ),
-            actions: [
-              ElevatedButton(
-                  onPressed: () async {
-                    if (_formKey.currentState!.validate()) {
-                      if (_currency == "sum") {
-                        final totalSum = clientModel.total_sum_uzs!.toDouble() +
-                            (num.tryParse(_priceController.text
-                                        .pickOnlyNumbers()) ??
-                                    0.0)
-                                .toDouble();
-
-                        final updatedClient =
-                            clientModel.copyWith(total_sum_uzs: totalSum);
-                        clientCollection.doc(clientModel.id).update({
-                          "client_name": updatedClient.client_name,
-                          "phone_number": updatedClient.phone_number ?? "",
-                          "total_sum_uzs": updatedClient.total_sum_uzs,
-                          "total_sum_usd": updatedClient.total_sum_usd,
-                          "created_at": updatedClient.created_at.toString(),
-                          "updated_at": DateTime.now().toString(),
-                        });
-                        _priceController.clear();
-                        Navigator.of(context).pop();
-                        return;
-                      } else {
-                        final totalSum = clientModel.total_sum_usd!.toDouble() +
-                            (num.tryParse(_priceController.text
-                                        .pickOnlyNumbers()) ??
-                                    0.0)
-                                .toDouble();
-
-                        final updatedClient =
-                            clientModel.copyWith(total_sum_usd: totalSum);
-                        clientCollection.doc(clientModel.id).update({
-                          "client_name": updatedClient.client_name,
-                          "phone_number": updatedClient.phone_number ?? "",
-                          "total_sum_uzs": updatedClient.total_sum_uzs,
-                          "total_sum_usd": updatedClient.total_sum_usd,
-                          "created_at": updatedClient.created_at.toString(),
-                          "updated_at": DateTime.now().toString(),
-                        });
-                        _priceController.clear();
-                        Navigator.of(context).pop();
-                        return;
-                      }
-                    }
-                  },
-                  child: const Text("Yangilash"))
-            ],
-          );
-        });
-  }
-
-  Future<dynamic> _removeMoneyToClientSum(
-      BuildContext context, ClientModel clientModel) {
-    return showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Pulni ayirish",
-                  style: TextStyle(fontSize: 18.0),
-                ),
-                IconButton(
-                    onPressed: () {
-                      _priceController.clear();
-
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.cancel_outlined))
-              ],
-            ),
-            content: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 16.h),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: StatefulBuilder(builder: (context, setState) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                            "${clientModel.client_name} sizga qancha pul berdi?"),
-                        Gap(10.h),
-                        TextFormField(
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [
-                            NumericTextFormatter(),
-                          ],
-                          controller: _priceController,
-                          decoration: InputDecoration(
-                            hintText: "Narxi",
-                            suffixIcon: DropdownButtonHideUnderline(
-                              child: DropdownButton(
-                                  value: _currency,
-                                  items: const [
-                                    DropdownMenuItem(
-                                        value: "sum", child: Text("SO'M")),
-                                    DropdownMenuItem(
-                                        value: "usd", child: Text("USD"))
-                                  ],
-                                  onChanged: (v) {
-                                    setState(() {
-                                      _currency = v as String;
-                                    });
-                                  }),
-                            ),
-                          ),
-                        ),
-                        Gap(10.h),
-                      ],
-                    );
-                  }),
-                ),
-              ),
-            ),
-            actions: [
-              ElevatedButton(
-                  onPressed: () async {
-                    if (_formKey.currentState!.validate()) {
-                      if (_currency == "sum") {
-                        final totalSum = clientModel.total_sum_uzs!.toInt() -
-                            (int.tryParse(_priceController.text
-                                        .pickOnlyNumbers()) ??
-                                    0.0)
-                                .toInt();
-
-                        final updatedClient =
-                            clientModel.copyWith(total_sum_uzs: totalSum);
-
-                        clientCollection.doc(clientModel.id).update({
-                          "client_name": updatedClient.client_name,
-                          "phone_number": updatedClient.phone_number ?? "",
-                          "total_sum_uzs": updatedClient.total_sum_uzs,
-                          "total_sum_usd": updatedClient.total_sum_usd,
-                          "created_at": updatedClient.created_at.toString(),
-                          "updated_at": DateTime.now().toString(),
-                        });
-                        _priceController.clear();
-                        Navigator.of(context).pop();
-                        return;
-                      } else {
-                        final totalSum = clientModel.total_sum_usd!.toInt() -
-                            (int.tryParse(_priceController.text
-                                        .pickOnlyNumbers()) ??
-                                    0.0)
-                                .toInt();
-
-                        final updatedClient =
-                            clientModel.copyWith(total_sum_usd: totalSum);
-                        clientCollection.doc(clientModel.id).update({
-                          "client_name": updatedClient.client_name,
-                          "phone_number": updatedClient.phone_number ?? "",
-                          "total_sum_uzs": updatedClient.total_sum_uzs,
-                          "total_sum_usd": updatedClient.total_sum_usd,
-                          "created_at": updatedClient.created_at.toString(),
-                          "updated_at": DateTime.now().toString(),
-                        });
-                        _priceController.clear();
-                        Navigator.of(context).pop();
-                        return;
-                      }
                     }
                   },
                   child: const Text("Yangilash"))
@@ -534,7 +244,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ManagerProductDetailsPage(
+                  builder: (context) => EmployeeProductDetailsPage(
                     element: data[index],
                   ),
                 ),
@@ -547,27 +257,10 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
             title: Text(data[index].client_name.toString(),
                 style: const TextStyle(
                     fontSize: 16.0, fontWeight: FontWeight.w500)),
-            subtitle: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Qoldiq: ",
-                  style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.w400),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                        "${data[index].total_sum_usd.toString().formatMoney()} USD",
-                        style: const TextStyle(
-                            fontSize: 16.0, fontWeight: FontWeight.w400)),
-                    Text(
-                        "${data[index].total_sum_uzs.toString().formatMoney()} UZS",
-                        style: const TextStyle(
-                            fontSize: 16.0, fontWeight: FontWeight.w400)),
-                  ],
-                ),
-              ],
+            subtitle: Text(
+              data[index].phone_number.toString(),
+              style:
+                  const TextStyle(fontSize: 16.0, fontWeight: FontWeight.w400),
             ),
             trailing: PopupMenuButton(itemBuilder: (context) {
               return [
