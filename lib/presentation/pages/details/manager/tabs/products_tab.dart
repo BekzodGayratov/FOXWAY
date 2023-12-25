@@ -30,7 +30,7 @@ class _ManagerProductTabState extends State<ManagerProductTab>
   late final TextEditingController _givenDateController;
   late String _currency;
 
-  late Stream<QuerySnapshot<Map<String, dynamic>>>? productsSnapshot;
+  late Future<QuerySnapshot<Map<String, dynamic>>>? productsSnapshot;
   late final CollectionReference<Map<String, dynamic>> productsCollection;
   late final CollectionReference<Map<String, dynamic>> clientCollection;
 
@@ -57,9 +57,9 @@ class _ManagerProductTabState extends State<ManagerProductTab>
         .doc(widget.element.id)
         .collection('products')
         .orderBy("created_at")
-        .snapshots();
+        .get();
 
-    _currency = "sum";
+    _currency = "usd";
 
     _productTypeController = TextEditingController();
     _priceController = TextEditingController();
@@ -82,8 +82,8 @@ class _ManagerProductTabState extends State<ManagerProductTab>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: StreamBuilder(
-          stream: productsSnapshot,
+      body: FutureBuilder(
+          future: productsSnapshot,
           builder: (context,
               AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
             if (snapshot.hasData) {
@@ -96,276 +96,292 @@ class _ManagerProductTabState extends State<ManagerProductTab>
 
               WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
                 _calculateTotalPaidMoney(products);
-                final updated = widget.element.copyWith(
-                    total_sum_usd: SumController.totalSumUsd - totalPriceUsd,
-                    total_sum_uzs: SumController.totalSumUzs - totalPriceUzs);
-                _updateClient(updated);
               });
 
               return products.isEmpty
-                  ? const Center(child: Text("Tovarlar mavjud emas"))
+                  ? Center(
+                      child: ListView(
+                        children: [
+                          Gap(100.h),
+                          const Align(
+                              alignment: Alignment.center,
+                              child: Text("Mahsulotlar mavjud emas")),
+                        ],
+                      ),
+                    )
                   : Scaffold(
-                      body: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: SingleChildScrollView(
-                          child: DataTable(
-                            showCheckboxColumn: false,
-                            headingTextStyle: const TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.w600),
-                            border:
-                                TableBorder.all(color: const Color(0xffF2F4F7)),
-                            columns: const [
-                              DataColumn(label: Text("#")),
-                              DataColumn(label: Text("Tovarlari")),
-                              DataColumn(label: Text("Narxi")),
-                              DataColumn(label: Text("To'landi")),
-                              DataColumn(label: Text("Qoldiq")),
-                              DataColumn(label: Text("Berilgan sana")),
-                              DataColumn(label: Text("O'chirish"))
-                            ],
-                            rows: List.generate(
-                              products.length,
-                              (index) => DataRow(cells: [
-                                DataCell(
-                                  Text("${index + 1}"),
-                                ),
-                                DataCell(
-                                  TextFormField(
-                                    initialValue:
-                                        products[index].product_type ?? '',
-                                    decoration: const InputDecoration(
-                                        border: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        enabledBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        focusedBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        errorBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.red)),
-                                        hintText: "Mahsulot turi"),
-                                    onFieldSubmitted: (v) {
-                                      if (v.trim() !=
-                                          products[index]
-                                              .product_type!
-                                              .toString()
-                                              .trim()) {
-                                        products[index] =
-                                            products[index].copyWith(
-                                          product_type: v,
-                                        );
-                                        _updateProduct(products[index]);
-                                      }
-                                    },
-                                  ),
-                                ),
-                                DataCell(
-                                  TextFormField(
-                                    keyboardType: TextInputType.number,
-                                    readOnly: false,
-                                    inputFormatters: [
-                                      NumericTextFormatter(),
-                                    ],
-                                    initialValue: products[index]
-                                        .price!
-                                        .sum
-                                        .toString()
-                                        .formatMoney(),
-                                    decoration: InputDecoration(
-                                        suffix: Text(
-                                            products[index].price!.currency ==
-                                                    "usd"
-                                                ? "USD "
-                                                : "SO'M "),
-                                        border: const OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        enabledBorder: const OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        focusedBorder: const OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        errorBorder: const OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.red)),
-                                        hintText: "Mahsulot narxi"),
-                                    onFieldSubmitted: (v) {
-                                      if (v.pickOnlyNumbers().trim() !=
-                                          products[index]
-                                              .price!
-                                              .sum
-                                              .toString()
-                                              .pickOnlyNumbers()
-                                              .trim()) {
-                                        products[index] =
-                                            products[index].copyWith(
-                                          price: Price(
-                                              sum: num.tryParse(
-                                                      v.pickOnlyNumbers()) ??
-                                                  0.0,
-                                              currency: products[index]
-                                                  .price!
-                                                  .currency),
-                                        );
-                                        _updateProduct(products[index]);
-                                      }
-                                    },
-                                  ),
-                                ),
-                                DataCell(
-                                  TextFormField(
-                                    inputFormatters: [
-                                      NumericTextFormatter(),
-                                    ],
-                                    keyboardType: TextInputType.number,
-                                    autovalidateMode:
-                                        AutovalidateMode.onUserInteraction,
-                                    initialValue: products[index]
-                                        .paid_money!
-                                        .sum
-                                        .toString()
-                                        .formatMoney(),
-                                    decoration: InputDecoration(
-                                        isDense: true,
-                                        suffix: Text(products[index]
-                                                    .price!
-                                                    .currency ==
-                                                "usd"
-                                            ? "USD "
-                                            : "SO'M "),
-                                        border: const UnderlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        enabledBorder:
-                                            const UnderlineInputBorder(
+                      body: ListView(
+                        children: [
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: SingleChildScrollView(
+                              child: DataTable(
+                                showCheckboxColumn: false,
+                                headingTextStyle: const TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w600),
+                                border: TableBorder.all(
+                                    color: const Color(0xffF2F4F7)),
+                                columns: const [
+                                  DataColumn(label: Text("#")),
+                                  DataColumn(label: Text("Tovarlari")),
+                                  DataColumn(label: Text("Narxi")),
+                                  DataColumn(label: Text("To'landi")),
+                                  DataColumn(label: Text("Qoldiq")),
+                                  DataColumn(label: Text("Berilgan sana")),
+                                  DataColumn(label: Text("O'chirish"))
+                                ],
+                                rows: List.generate(
+                                  products.length,
+                                  (index) => DataRow(cells: [
+                                    DataCell(
+                                      Text("${index + 1}"),
+                                    ),
+                                    DataCell(
+                                      TextFormField(
+                                        initialValue:
+                                            products[index].product_type ?? '',
+                                        decoration: const InputDecoration(
+                                            border: OutlineInputBorder(
                                                 borderSide: BorderSide(
                                                     color: Colors.transparent)),
-                                        focusedBorder:
-                                            const UnderlineInputBorder(
+                                            enabledBorder: OutlineInputBorder(
                                                 borderSide: BorderSide(
                                                     color: Colors.transparent)),
-                                        errorBorder: const UnderlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.red)),
-                                        hintText: "To'landi"),
-                                    validator: (v) {
-                                      if (v!.isEmpty) {
-                                        return "Bo'sh qoldirmang";
-                                      } else if (products[index].price!.sum! <
-                                          num.parse(v.pickOnlyNumbers())) {
-                                        v = products[index]
+                                            focusedBorder: OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Colors.transparent)),
+                                            errorBorder: OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Colors.red)),
+                                            hintText: "Mahsulot turi"),
+                                        onFieldSubmitted: (v) {
+                                          if (v.trim() !=
+                                              products[index]
+                                                  .product_type!
+                                                  .toString()
+                                                  .trim()) {
+                                            products[index] =
+                                                products[index].copyWith(
+                                              product_type: v,
+                                            );
+                                            _updateProduct(products[index]);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                    DataCell(
+                                      TextFormField(
+                                        keyboardType: TextInputType.number,
+                                        readOnly: false,
+                                        inputFormatters: [
+                                          NumericTextFormatter(),
+                                        ],
+                                        initialValue: products[index]
                                             .price!
                                             .sum
                                             .toString()
-                                            .formatMoney();
-                                        return "${products[index].price!.sum!.toString().formatMoney()} dan oshib ketdi";
-                                      } else {
-                                        return null;
-                                      }
-                                    },
-                                    onFieldSubmitted: (v) {
-                                      if (products[index]
-                                              .paid_money!
-                                              .sum
-                                              .toString()
-                                              .pickOnlyNumbers()
-                                              .trim() !=
-                                          v.trim()) {
-                                        if (products[index].price!.sum! >=
-                                            num.parse(v.pickOnlyNumbers())) {
-                                          products[index] =
-                                              products[index].copyWith(
-                                            paid_money: Price(
-                                                sum: num.tryParse(
-                                                        v.pickOnlyNumbers()) ??
-                                                    0.0),
-                                          );
-                                          _updateProduct(products[index]);
-                                        }
-                                      }
-                                    },
-                                  ),
-                                ),
-                                DataCell(
-                                  TextFormField(
-                                    readOnly: true,
-                                    keyboardType: TextInputType.number,
-                                    autovalidateMode:
-                                        AutovalidateMode.onUserInteraction,
-                                    initialValue: (products[index].price!.sum! -
-                                            products[index].paid_money!.sum!)
-                                        .toString()
-                                        .formatMoney(),
-                                    decoration: InputDecoration(
-                                        isDense: true,
-                                        suffix: Text(products[index]
-                                                    .price!
-                                                    .currency ==
-                                                "usd"
-                                            ? "USD "
-                                            : "SO'M "),
-                                        border: const UnderlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        enabledBorder:
-                                            const UnderlineInputBorder(
+                                            .formatMoney(),
+                                        decoration: InputDecoration(
+                                            suffix: Text(products[index]
+                                                        .price!
+                                                        .currency ==
+                                                    "usd"
+                                                ? "USD "
+                                                : "SO'M "),
+                                            border: const OutlineInputBorder(
                                                 borderSide: BorderSide(
                                                     color: Colors.transparent)),
-                                        focusedBorder:
-                                            const UnderlineInputBorder(
+                                            enabledBorder: const OutlineInputBorder(
                                                 borderSide: BorderSide(
                                                     color: Colors.transparent)),
-                                        errorBorder: const UnderlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.red)),
-                                        hintText: "Qoldiq"),
-                                  ),
-                                ),
-                                DataCell(
-                                  TextFormField(
-                                    readOnly: true,
-                                    initialValue:
-                                        DateFormat(DateFormat.YEAR_MONTH_DAY)
+                                            focusedBorder: const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Colors.transparent)),
+                                            errorBorder:
+                                                const OutlineInputBorder(
+                                                    borderSide: BorderSide(
+                                                        color: Colors.red)),
+                                            hintText: "Mahsulot narxi"),
+                                        onFieldSubmitted: (v) {
+                                          if (v.pickOnlyNumbers().trim() !=
+                                              products[index]
+                                                  .price!
+                                                  .sum
+                                                  .toString()
+                                                  .pickOnlyNumbers()
+                                                  .trim()) {
+                                            products[index] =
+                                                products[index].copyWith(
+                                              price: Price(
+                                                  sum: num.tryParse(v
+                                                          .pickOnlyNumbers()) ??
+                                                      0.0,
+                                                  currency: products[index]
+                                                      .price!
+                                                      .currency),
+                                            );
+                                            _updateProduct(products[index]);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                    DataCell(
+                                      TextFormField(
+                                        inputFormatters: [
+                                          NumericTextFormatter(),
+                                        ],
+                                        keyboardType: TextInputType.number,
+                                        autovalidateMode:
+                                            AutovalidateMode.onUserInteraction,
+                                        initialValue: products[index]
+                                            .paid_money!
+                                            .sum
+                                            .toString()
+                                            .formatMoney(),
+                                        decoration: InputDecoration(
+                                            isDense: true,
+                                            suffix: Text(products[index]
+                                                        .price!
+                                                        .currency ==
+                                                    "usd"
+                                                ? "USD "
+                                                : "SO'M "),
+                                            border: const UnderlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Colors.transparent)),
+                                            enabledBorder: const UnderlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Colors.transparent)),
+                                            focusedBorder: const UnderlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Colors.transparent)),
+                                            errorBorder:
+                                                const UnderlineInputBorder(
+                                                    borderSide: BorderSide(
+                                                        color: Colors.red)),
+                                            hintText: "To'landi"),
+                                        validator: (v) {
+                                          if (v!.isEmpty) {
+                                            return "Bo'sh qoldirmang";
+                                          } else if (products[index]
+                                                  .price!
+                                                  .sum! <
+                                              num.parse(v.pickOnlyNumbers())) {
+                                            v = products[index]
+                                                .price!
+                                                .sum
+                                                .toString()
+                                                .formatMoney();
+                                            return "${products[index].price!.sum!.toString().formatMoney()} dan oshib ketdi";
+                                          } else {
+                                            return null;
+                                          }
+                                        },
+                                        onFieldSubmitted: (v) {
+                                          if (products[index]
+                                                  .paid_money!
+                                                  .sum
+                                                  .toString()
+                                                  .pickOnlyNumbers()
+                                                  .trim() !=
+                                              v.trim()) {
+                                            if (products[index].price!.sum! >=
+                                                num.parse(
+                                                    v.pickOnlyNumbers())) {
+                                              products[index] =
+                                                  products[index].copyWith(
+                                                paid_money: Price(
+                                                    sum: num.tryParse(v
+                                                            .pickOnlyNumbers()) ??
+                                                        0.0),
+                                              );
+                                              _updateProduct(products[index]);
+                                            }
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                    DataCell(
+                                      TextFormField(
+                                        readOnly: true,
+                                        keyboardType: TextInputType.number,
+                                        autovalidateMode:
+                                            AutovalidateMode.onUserInteraction,
+                                        initialValue:
+                                            (products[index].price!.sum! -
+                                                    products[index]
+                                                        .paid_money!
+                                                        .sum!)
+                                                .toString()
+                                                .formatMoney(),
+                                        decoration: InputDecoration(
+                                            isDense: true,
+                                            suffix: Text(products[index]
+                                                        .price!
+                                                        .currency ==
+                                                    "usd"
+                                                ? "USD "
+                                                : "SO'M "),
+                                            border: const UnderlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Colors.transparent)),
+                                            enabledBorder: const UnderlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Colors.transparent)),
+                                            focusedBorder: const UnderlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Colors.transparent)),
+                                            errorBorder:
+                                                const UnderlineInputBorder(
+                                                    borderSide: BorderSide(
+                                                        color: Colors.red)),
+                                            hintText: "Qoldiq"),
+                                      ),
+                                    ),
+                                    DataCell(
+                                      TextFormField(
+                                        readOnly: true,
+                                        initialValue: DateFormat(
+                                                DateFormat.YEAR_MONTH_DAY)
                                             .format(DateTime.parse(
                                                 products[index]
                                                     .given_date
                                                     .toString())),
-                                    decoration: const InputDecoration(
-                                        border: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        enabledBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        focusedBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        errorBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.red)),
-                                        hintText: "Berilgan sana"),
-                                  ),
+                                        decoration: const InputDecoration(
+                                            border: OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Colors.transparent)),
+                                            enabledBorder: OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Colors.transparent)),
+                                            focusedBorder: OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Colors.transparent)),
+                                            errorBorder: OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Colors.red)),
+                                            hintText: "Berilgan sana"),
+                                      ),
+                                    ),
+                                    DataCell(ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.amber,
+                                      ),
+                                      onPressed: () {
+                                        _deleteProduct(
+                                            widget.element, products, index);
+                                      },
+                                      child: const Text("O'chirish",
+                                          style:
+                                              TextStyle(color: Colors.white)),
+                                    )),
+                                  ]),
                                 ),
-                                DataCell(ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.amber,
-                                  ),
-                                  onPressed: () {
-                                    _deleteProduct(
-                                        widget.element, products, index);
-                                  },
-                                  child: const Text("O'chirish",
-                                      style: TextStyle(color: Colors.white)),
-                                )),
-                              ]),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
                       bottomNavigationBar: Container(
                           height: 80.h,
@@ -676,14 +692,15 @@ class _ManagerProductTabState extends State<ManagerProductTab>
     setState(() {});
   }
 
-  Future<void> _updateClient(ClientModel updatedClient) async {
-    await clientCollection.doc(widget.element.id).update({
-      "client_name": updatedClient.client_name,
-      "phone_number": updatedClient.phone_number ?? "",
-      "total_sum_uzs": updatedClient.total_sum_uzs,
-      "total_sum_usd": updatedClient.total_sum_usd,
-      "created_at": updatedClient.created_at.toString(),
-      "updated_at": DateTime.now().toString(),
-    });
-  }
+  // Future<void> _updateClient(ClientModel updatedClient) async {
+  //   showFoxMessage("ISHLADI");
+  //   await clientCollection.doc(widget.element.id).update({
+  //     "client_name": updatedClient.client_name,
+  //     "phone_number": updatedClient.phone_number ?? "",
+  //     "total_sum_uzs": updatedClient.total_sum_uzs,
+  //     "total_sum_usd": updatedClient.total_sum_usd,
+  //     "created_at": updatedClient.created_at.toString(),
+  //     "updated_at": DateTime.now().toString(),
+  //   });
+  // }
 }

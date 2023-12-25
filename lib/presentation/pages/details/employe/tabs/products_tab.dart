@@ -30,7 +30,7 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
   late final TextEditingController _givenDateController;
   late String _currency;
 
-  late Stream<QuerySnapshot<Map<String, dynamic>>>? productsSnapshot;
+  late Future<QuerySnapshot<Map<String, dynamic>>>? productsSnapshot;
   late final CollectionReference<Map<String, dynamic>> productsCollection;
   late final CollectionReference<Map<String, dynamic>> clientCollection;
 
@@ -57,9 +57,9 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
         .doc(widget.element.id)
         .collection('products')
         .orderBy("created_at")
-        .snapshots();
+        .get();
 
-    _currency = "sum";
+    _currency = "usd";
 
     _productTypeController = TextEditingController();
     _priceController = TextEditingController();
@@ -79,11 +79,23 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
     super.dispose();
   }
 
+  Future<void> refreshData() async {
+    setState(() {
+      // Reinitialize the future to trigger a rebuild
+      productsSnapshot = FirebaseFirestore.instance
+          .collection("clients")
+          .doc(widget.element.id)
+          .collection('products')
+          .orderBy("created_at")
+          .get();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: StreamBuilder(
-          stream: productsSnapshot,
+      body: FutureBuilder(
+          future: productsSnapshot,
           builder: (context,
               AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
             if (snapshot.hasData) {
@@ -93,17 +105,25 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
               for (var i = 0; i < snapshot.data!.docs.length; i++) {
                 products[i].id = snapshot.data!.docs[i].id.toString();
               }
-
+      
               WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
                 _calculateTotalPaidMoney(products);
-                final updated = widget.element.copyWith(
-                    total_sum_usd: SumController.totalSumUsd - totalPriceUsd,
-                    total_sum_uzs: SumController.totalSumUzs - totalPriceUzs);
-                _updateClient(updated);
               });
-
+      
               return products.isEmpty
-                  ? const Center(child: Text("Tovarlar mavjud emas"))
+                  ? RefreshIndicator(
+                      onRefresh: refreshData,
+                      child: Center(
+                        child: ListView(
+                          children: [
+                            Gap(100.h),
+                            const Align(
+                                alignment: Alignment.center,
+                                child: Text("Mahsulotlar mavjud emas")),
+                          ],
+                        ),
+                      ),
+                    )
                   : Scaffold(
                       body: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
@@ -113,8 +133,8 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                             headingTextStyle: const TextStyle(
                                 color: Colors.black,
                                 fontWeight: FontWeight.w600),
-                            border:
-                                TableBorder.all(color: const Color(0xffF2F4F7)),
+                            border: TableBorder.all(
+                                color: const Color(0xffF2F4F7)),
                             columns: const [
                               DataColumn(label: Text("#")),
                               DataColumn(label: Text("Tovarlari")),
@@ -145,8 +165,8 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                             borderSide: BorderSide(
                                                 color: Colors.transparent)),
                                         errorBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.red)),
+                                            borderSide: BorderSide(
+                                                color: Colors.red)),
                                         hintText: "Mahsulot turi"),
                                     // onFieldSubmitted: (v) {
                                     //   if (v.trim() !=
@@ -176,20 +196,23 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                         .toString()
                                         .formatMoney(),
                                     decoration: InputDecoration(
-                                        suffix: Text(
-                                            products[index].price!.currency ==
-                                                    "usd"
-                                                ? "USD "
-                                                : "SO'M "),
+                                        suffix: Text(products[index]
+                                                    .price!
+                                                    .currency ==
+                                                "usd"
+                                            ? "USD "
+                                            : "SO'M "),
                                         border: const OutlineInputBorder(
                                             borderSide: BorderSide(
                                                 color: Colors.transparent)),
                                         enabledBorder: const OutlineInputBorder(
                                             borderSide: BorderSide(
                                                 color: Colors.transparent)),
-                                        focusedBorder: const OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
+                                        focusedBorder:
+                                            const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color:
+                                                        Colors.transparent)),
                                         errorBorder: const OutlineInputBorder(
                                             borderSide:
                                                 BorderSide(color: Colors.red)),
@@ -241,14 +264,14 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                         border: const UnderlineInputBorder(
                                             borderSide: BorderSide(
                                                 color: Colors.transparent)),
-                                        enabledBorder:
-                                            const UnderlineInputBorder(
-                                                borderSide: BorderSide(
-                                                    color: Colors.transparent)),
+                                        enabledBorder: const UnderlineInputBorder(
+                                            borderSide: BorderSide(
+                                                color: Colors.transparent)),
                                         focusedBorder:
                                             const UnderlineInputBorder(
                                                 borderSide: BorderSide(
-                                                    color: Colors.transparent)),
+                                                    color:
+                                                        Colors.transparent)),
                                         errorBorder: const UnderlineInputBorder(
                                             borderSide:
                                                 BorderSide(color: Colors.red)),
@@ -281,8 +304,8 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                           products[index] =
                                               products[index].copyWith(
                                             paid_money: Price(
-                                                sum: num.tryParse(
-                                                        v.pickOnlyNumbers()) ??
+                                                sum: num.tryParse(v
+                                                        .pickOnlyNumbers()) ??
                                                     0.0),
                                           );
                                           _updateProduct(products[index]);
@@ -297,7 +320,9 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                     keyboardType: TextInputType.number,
                                     autovalidateMode:
                                         AutovalidateMode.onUserInteraction,
-                                    initialValue: (products[index].price!.sum! -
+                                    initialValue: (products[index]
+                                                .price!
+                                                .sum! -
                                             products[index].paid_money!.sum!)
                                         .toString()
                                         .formatMoney(),
@@ -312,14 +337,14 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                         border: const UnderlineInputBorder(
                                             borderSide: BorderSide(
                                                 color: Colors.transparent)),
-                                        enabledBorder:
-                                            const UnderlineInputBorder(
-                                                borderSide: BorderSide(
-                                                    color: Colors.transparent)),
+                                        enabledBorder: const UnderlineInputBorder(
+                                            borderSide: BorderSide(
+                                                color: Colors.transparent)),
                                         focusedBorder:
                                             const UnderlineInputBorder(
                                                 borderSide: BorderSide(
-                                                    color: Colors.transparent)),
+                                                    color:
+                                                        Colors.transparent)),
                                         errorBorder: const UnderlineInputBorder(
                                             borderSide:
                                                 BorderSide(color: Colors.red)),
@@ -346,8 +371,8 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                             borderSide: BorderSide(
                                                 color: Colors.transparent)),
                                         errorBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.red)),
+                                            borderSide: BorderSide(
+                                                color: Colors.red)),
                                         hintText: "Berilgan sana"),
                                   ),
                                 ),
@@ -368,7 +393,8 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8.0, vertical: 8.0),
                             child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment:
+                                  MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text("Umumiy qoldiq:",
                                     style: TextStyle(
@@ -377,7 +403,8 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                         color: Colors.white)),
                                 SingleChildScrollView(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.end,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.end,
                                     children: [
                                       Text(
                                           "${((SumController.totalSumUzs - totalPriceUzs) / 10).toString().pickOnlyNumbers().formatMoney()} UZS",
@@ -662,17 +689,19 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
             (element.price!.sum ?? 0.0) - (element.paid_money!.sum ?? 0.0);
       }
     }
+
     setState(() {});
   }
 
-  Future<void> _updateClient(ClientModel updatedClient) async {
-    await clientCollection.doc(widget.element.id).update({
-      "client_name": updatedClient.client_name,
-      "phone_number": updatedClient.phone_number ?? "",
-      "total_sum_uzs": updatedClient.total_sum_uzs,
-      "total_sum_usd": updatedClient.total_sum_usd,
-      "created_at": updatedClient.created_at.toString(),
-      "updated_at": DateTime.now().toString(),
-    });
-  }
+  // Future<void> _updateClient(ClientModel updatedClient) async {
+
+  //   await clientCollection.doc(widget.element.id).update({
+  //     "client_name": updatedClient.client_name,
+  //     "phone_number": updatedClient.phone_number ?? "",
+  //     "total_sum_uzs": updatedClient.total_sum_uzs,
+  //     "total_sum_usd": updatedClient.total_sum_usd,
+  //     "created_at": updatedClient.created_at.toString(),
+  //     "updated_at": DateTime.now().toString(),
+  //   });
+  // }
 }

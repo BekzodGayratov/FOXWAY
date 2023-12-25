@@ -59,7 +59,10 @@ class _ManagerProductDetailsPageState extends State<ManagerProductDetailsPage>
             indicatorColor: Colors.white,
             labelColor: Colors.white,
             controller: _tabController,
-            tabs: const [Tab(text: "Tovarlar"),Tab(text: "Aylanma pullar"),]),
+            tabs: const [
+              Tab(text: "Tovarlar"),
+              Tab(text: "Aylanma pullar"),
+            ]),
       ),
       body: TabBarView(controller: _tabController, children: [
         ManagerProductTab(element: widget.element),

@@ -24,7 +24,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
   final _formKey = GlobalKey<FormState>();
 
   //
-  late Stream<QuerySnapshot<Map<String, dynamic>>>? clientSnapshot;
+  late Future<QuerySnapshot<Map<String, dynamic>>>? clientSnapshot;
   late final CollectionReference<Map<String, dynamic>> clientCollection;
   late String _currency;
   num totalSumUzs = 0.0;
@@ -42,7 +42,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
     clientSnapshot = FirebaseFirestore.instance
         .collection("clients")
         .orderBy("created_at")
-        .snapshots();
+        .get();
 
     super.initState();
   }
@@ -55,99 +55,83 @@ class _ManagerScreenState extends State<ManagerScreen> {
     super.dispose();
   }
 
+  Future<void> refreshData() async {
+    setState(() {
+      // Reinitialize the future to trigger a rebuild
+      clientSnapshot = FirebaseFirestore.instance
+          .collection("clients")
+          .orderBy("created_at")
+          .get();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-        stream: clientSnapshot,
-        builder: (context,
-            AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
-          if (snapshot.hasData) {
-            final data = snapshot.data!.docs
-                .map((e) => ClientModel.fromMap(e.data()))
-                .toList();
-            for (var i = 0; i < snapshot.data!.docs.length; i++) {
-              data[i].id = snapshot.data!.docs[i].id.toString();
-            }
-            totalSumUsd = 0.0;
-            totalSumUzs = 0.0;
-            for (var i = 0; i < data.length; i++) {
-              totalSumUsd += data[i].total_sum_usd ?? 0;
-              totalSumUzs += data[i].total_sum_uzs ?? 0;
-            }
+    return RefreshIndicator(
+      onRefresh: refreshData,
+      child: FutureBuilder(
+          future: clientSnapshot,
+          builder: (context,
+              AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
+            if (snapshot.hasData) {
+              final data = snapshot.data!.docs
+                  .map((e) => ClientModel.fromMap(e.data()))
+                  .toList();
+              for (var i = 0; i < snapshot.data!.docs.length; i++) {
+                data[i].id = snapshot.data!.docs[i].id.toString();
+              }
+              totalSumUsd = 0.0;
+              totalSumUzs = 0.0;
+              for (var i = 0; i < data.length; i++) {
+                totalSumUsd += data[i].total_sum_usd ?? 0;
+                totalSumUzs += data[i].total_sum_uzs ?? 0;
+              }
 
-            return data.isEmpty
-                ? const Center(
-                    child: Text("Mijozlar mavjud emas"),
-                  )
-                : Scaffold(
-                    body: Padding(
-                      padding: EdgeInsets.only(top: 10.h),
-                      child: ListView.builder(
-                          itemCount: data.length,
-                          itemBuilder: (context, index) {
-                            bool showDate = index == 0 ||
-                                _isMonthChanged(data[index - 1], data[index]);
-                            return Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                if (showDate)
-                                  _buildDateHeader(
-                                      data[index].created_at.toString()),
-                                _buildProductItem(data, index)
-                              ],
-                            );
-                          }),
-                    ),
-                    bottomNavigationBar: Container(
-                        height: 80.h,
-                        width: double.infinity,
-                        decoration: const BoxDecoration(
-                            color: Colors.amber,
-                            boxShadow: [
-                              BoxShadow(color: Colors.grey, blurRadius: 5.0)
-                            ]),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8.0, vertical: 8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text("Umumiy qoldiq:",
-                                  style: TextStyle(
-                                      fontSize: 20.0,
-                                      fontStyle: FontStyle.italic,
-                                      color: Colors.white)),
-                              SingleChildScrollView(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                  children: [
-                                    Text(
-                                        "${(totalSumUzs / 10).toString().pickOnlyNumbers().formatMoney()} UZS",
-                                        style: const TextStyle(
-                                            fontSize: 20.0,
-                                            color: Colors.white)),
-                                    Text(
-                                        "${(totalSumUsd / 10).toString().pickOnlyNumbers().formatMoney()} USD",
-                                        style: const TextStyle(
-                                            fontSize: 20.0,
-                                            color: Colors.white)),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        )),
-                  );
-          } else if (!snapshot.hasData) {
-            return const Center(
-              child: CircularProgressIndicator.adaptive(),
-            );
-          } else if (snapshot.hasError) {
-            return Center(child: Text(snapshot.error.toString()));
-          } else {
-            return const SizedBox.shrink();
-          }
-        });
+              return data.isEmpty
+                  ? RefreshIndicator(
+                      onRefresh: refreshData,
+                      child: Center(
+                        child: ListView(
+                          children: [
+                            Gap(100.h),
+                            const Align(
+                                alignment: Alignment.center,
+                                child: Text("Mijozlar mavjud emas")),
+                          ],
+                        ),
+                      ),
+                    )
+                  : Scaffold(
+                      body: Padding(
+                        padding: EdgeInsets.only(top: 10.h),
+                        child: ListView.builder(
+                            itemCount: data.length,
+                            itemBuilder: (context, index) {
+                              bool showDate = index == 0 ||
+                                  _isMonthChanged(data[index - 1], data[index]);
+                              return Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (showDate)
+                                    _buildDateHeader(
+                                        data[index].created_at.toString()),
+                                  _buildProductItem(data, index)
+                                ],
+                              );
+                            }),
+                      ),
+                    );
+            } else if (!snapshot.hasData) {
+              return const Center(
+                child: CircularProgressIndicator.adaptive(),
+              );
+            } else if (snapshot.hasError) {
+              return Center(child: Text(snapshot.error.toString()));
+            } else {
+              return const SizedBox.shrink();
+            }
+          }),
+    );
   }
 
   void _deleteClient(String id, String tenant) {
@@ -544,27 +528,10 @@ class _ManagerScreenState extends State<ManagerScreen> {
             title: Text(data[index].client_name.toString(),
                 style: const TextStyle(
                     fontSize: 16.0, fontWeight: FontWeight.w500)),
-            subtitle: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Qoldiq: ",
-                  style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.w400),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                        "${(data[index].total_sum_uzs! / 10).toString().pickOnlyNumbers().formatMoney()} UZS",
-                        style: const TextStyle(
-                            fontSize: 16.0, fontWeight: FontWeight.w400)),
-                    Text(
-                        "${(data[index].total_sum_usd! / 10).toString().pickOnlyNumbers().formatMoney()} USD",
-                        style: const TextStyle(
-                            fontSize: 16.0, fontWeight: FontWeight.w400)),
-                  ],
-                ),
-              ],
+            subtitle: Text(
+              data[index].phone_number.toString(),
+              style:
+                  const TextStyle(fontSize: 16.0, fontWeight: FontWeight.w400),
             ),
             trailing: PopupMenuButton(itemBuilder: (context) {
               return [

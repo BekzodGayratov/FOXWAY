@@ -111,17 +111,14 @@ class _HomePageState extends State<HomePage> {
           ? const ManagerScreen()
           : const EmployeeScreen(),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: Padding(
-        padding: EdgeInsets.only(bottom: 100.h),
-        child: FloatingActionButton(
-          backgroundColor: Colors.amber,
-          foregroundColor: Colors.white,
-          onPressed: () async {
-            await _showAddClientDialog(context);
-            setState(() {});
-          },
-          child: const Icon(Icons.add),
-        ),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.amber,
+        foregroundColor: Colors.white,
+        onPressed: () async {
+          await _showAddClientDialog(context);
+          setState(() {});
+        },
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -211,6 +208,7 @@ class _HomePageState extends State<HomePage> {
                         _paidDebtController.clear();
                         _phoneController.clear();
                         _tenantNameController.clear();
+                        setState(() {});
                       });
 
                       Navigator.of(ctx).pop();

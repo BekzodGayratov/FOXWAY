@@ -1,3 +1,5 @@
+// ignore_for_file: unnecessary_null_comparison
+
 import 'package:accountant/domain/client_model.dart';
 import 'package:accountant/domain/price_model.dart';
 import 'package:accountant/domain/sum_controller.dart';
@@ -28,7 +30,7 @@ class _ManagerSumTabState extends State<ManagerSumTab>
   late final TextEditingController _givenDateController;
   late String _currency;
 
-  late Stream<QuerySnapshot<Map<String, dynamic>>> sumSnapshot;
+  late Future<QuerySnapshot<Map<String, dynamic>>> sumSnapshot;
   late final CollectionReference<Map<String, dynamic>> sumCollection;
   late final CollectionReference<Map<String, dynamic>> clientCollection;
 
@@ -57,9 +59,9 @@ class _ManagerSumTabState extends State<ManagerSumTab>
         .doc(widget.element.id)
         .collection('sums')
         .orderBy("given_date")
-        .snapshots();
+        .get();
 
-    _currency = "sum";
+    _currency = "usd";
 
     _priceController = TextEditingController();
     _givenDateController = TextEditingController();
@@ -75,11 +77,12 @@ class _ManagerSumTabState extends State<ManagerSumTab>
     super.dispose();
   }
 
+ 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: StreamBuilder(
-          stream: sumSnapshot,
+      body: FutureBuilder(
+          future: sumSnapshot,
           builder: (context,
               AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
             if (snapshot.hasData) {
@@ -93,118 +96,141 @@ class _ManagerSumTabState extends State<ManagerSumTab>
               _calculateTotalPaidMoney(sums);
 
               return sums.isEmpty
-                  ? const Center(child: Text("Pullar mavjud emas"))
+                  ? Center(
+                    child: ListView(
+                      children: [
+                        Gap(100.h),
+                        const Align(
+                            alignment: Alignment.center,
+                            child: Text("Summalar mavjud emas")),
+                      ],
+                    ),
+                  )
                   : Scaffold(
-                      body: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: SingleChildScrollView(
-                          child: DataTable(
-                            showCheckboxColumn: false,
-                            headingTextStyle: const TextStyle(
-                                color: Colors.black,
-                                fontWeight: FontWeight.w600),
-                            border:
-                                TableBorder.all(color: const Color(0xffF2F4F7)),
-                            columns: const [
-                              DataColumn(label: Text("#")),
-                              DataColumn(label: Text("Pul qiymati")),
-                              DataColumn(label: Text("Berilgan sana")),
-                              DataColumn(label: Text("O'chirish"))
-                            ],
-                            rows: List.generate(
-                              sums.length,
-                              (index) => DataRow(cells: [
-                                DataCell(
-                                  Text("${index + 1}"),
+                      body: ListView(
+                        children: [
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: SingleChildScrollView(
+                              child: DataTable(
+                                showCheckboxColumn: false,
+                                headingTextStyle: const TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.w600),
+                                border: TableBorder.all(
+                                    color: const Color(0xffF2F4F7)),
+                                columns: const [
+                                  DataColumn(label: Text("#")),
+                                  DataColumn(label: Text("Pul qiymati")),
+                                  DataColumn(label: Text("Berilgan sana")),
+                                  DataColumn(label: Text("O'chirish"))
+                                ],
+                                rows: List.generate(
+                                  sums.length,
+                                  (index) => DataRow(cells: [
+                                    DataCell(
+                                      Text("${index + 1}"),
+                                    ),
+                                    DataCell(
+                                      TextFormField(
+                                        keyboardType: TextInputType.number,
+                                        readOnly: false,
+                                        inputFormatters: [
+                                          NumericTextFormatter(),
+                                        ],
+                                        initialValue: sums[index]
+                                            .sum!
+                                            .sum
+                                            .toString()
+                                            .formatMoney(),
+                                        decoration: InputDecoration(
+                                            suffix: Text(
+                                                sums[index].sum!.currency == "usd"
+                                                    ? "USD "
+                                                    : "SO'M "),
+                                            border: const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color:
+                                                        Colors.transparent)),
+                                            enabledBorder: const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color:
+                                                        Colors.transparent)),
+                                            focusedBorder: const OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color:
+                                                        Colors.transparent)),
+                                            errorBorder: const OutlineInputBorder(
+                                                borderSide: BorderSide(color: Colors.red)),
+                                            hintText: "Berilgan pul narxi"),
+                                        onFieldSubmitted: (v) {
+                                          if (v.pickOnlyNumbers().trim() !=
+                                              sums[index]
+                                                  .sum!
+                                                  .sum
+                                                  .toString()
+                                                  .pickOnlyNumbers()
+                                                  .trim()) {
+                                            sums[index] =
+                                                sums[index].copyWith(
+                                              sum: Price(
+                                                  sum: num.tryParse(v
+                                                          .pickOnlyNumbers()) ??
+                                                      0.0,
+                                                  currency: sums[index]
+                                                      .sum!
+                                                      .currency),
+                                            );
+                                            _updateSum(sums[index]);
+                                          }
+                                        },
+                                      ),
+                                    ),
+                                    DataCell(
+                                      TextFormField(
+                                        readOnly: true,
+                                        initialValue: DateFormat(
+                                                DateFormat.YEAR_MONTH_DAY)
+                                            .format(DateTime.parse(sums[index]
+                                                .given_date
+                                                .toString())),
+                                        decoration: const InputDecoration(
+                                            border: OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color:
+                                                        Colors.transparent)),
+                                            enabledBorder: OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color:
+                                                        Colors.transparent)),
+                                            focusedBorder: OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color:
+                                                        Colors.transparent)),
+                                            errorBorder: OutlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Colors.red)),
+                                            hintText: "Berilgan sana"),
+                                      ),
+                                    ),
+                                    DataCell(ElevatedButton(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.amber,
+                                      ),
+                                      onPressed: () {
+                                        _deleteSum(
+                                            widget.element, sums, index);
+                                      },
+                                      child: const Text("O'chirish",
+                                          style:
+                                              TextStyle(color: Colors.white)),
+                                    )),
+                                  ]),
                                 ),
-                                DataCell(
-                                  TextFormField(
-                                    keyboardType: TextInputType.number,
-                                    readOnly: false,
-                                    inputFormatters: [
-                                      NumericTextFormatter(),
-                                    ],
-                                    initialValue: sums[index]
-                                        .sum!
-                                        .sum
-                                        .toString()
-                                        .formatMoney(),
-                                    decoration: InputDecoration(
-                                        suffix: Text(
-                                            sums[index].sum!.currency == "usd"
-                                                ? "USD "
-                                                : "SO'M "),
-                                        border: const OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        enabledBorder: const OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        focusedBorder: const OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        errorBorder: const OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.red)),
-                                        hintText: "Berilgan pul narxi"),
-                                    onFieldSubmitted: (v) {
-                                      if (v.pickOnlyNumbers().trim() !=
-                                          sums[index]
-                                              .sum!
-                                              .sum
-                                              .toString()
-                                              .pickOnlyNumbers()
-                                              .trim()) {
-                                        sums[index] = sums[index].copyWith(
-                                          sum: Price(
-                                              sum: num.tryParse(
-                                                      v.pickOnlyNumbers()) ??
-                                                  0.0,
-                                              currency:
-                                                  sums[index].sum!.currency),
-                                        );
-                                        _updateSum(sums[index]);
-                                      }
-                                    },
-                                  ),
-                                ),
-                                DataCell(
-                                  TextFormField(
-                                    readOnly: true,
-                                    initialValue: DateFormat(
-                                            DateFormat.YEAR_MONTH_DAY)
-                                        .format(DateTime.parse(
-                                            sums[index].given_date.toString())),
-                                    decoration: const InputDecoration(
-                                        border: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        enabledBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        focusedBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
-                                        errorBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.red)),
-                                        hintText: "Berilgan sana"),
-                                  ),
-                                ),
-                                DataCell(ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.amber,
-                                  ),
-                                  onPressed: () {
-                                    _deleteSum(widget.element, sums, index);
-                                  },
-                                  child: const Text("O'chirish",
-                                      style: TextStyle(color: Colors.white)),
-                                )),
-                              ]),
+                              ),
                             ),
                           ),
-                        ),
+                        ],
                       ),
                       bottomNavigationBar: Container(
                           height: 80.h,
@@ -434,16 +460,22 @@ class _ManagerSumTabState extends State<ManagerSumTab>
   }
 
   Future<void> _calculateTotalPaidMoney(List<SumModel> sums) async {
-    totalPriceUzs = 0.0;
-    totalPriceUsd = 0.0;
-    for (var element in sums) {
-      if (element.sum!.currency == "sum") {
-        totalPriceUzs += element.sum!.sum ?? 0;
-      } else {
-        totalPriceUsd += element.sum!.sum ?? 0;
+    if (sums.isNotEmpty) {
+      totalPriceUzs = 0.0;
+      totalPriceUsd = 0.0;
+      for (var element in sums) {
+        if (element.sum != null) {
+          if (element.sum!.currency == "sum") {
+            totalPriceUzs += element.sum!.sum ?? 0;
+          } else {
+            totalPriceUsd += element.sum!.sum ?? 0;
+          }
+        }
       }
+      SumController.totalSumUzs = totalPriceUzs;
+      SumController.totalSumUsd = totalPriceUsd;
+
+      setState(() {});
     }
-    SumController.totalSumUzs = totalPriceUzs;
-    SumController.totalSumUsd = totalPriceUsd;
   }
 }
