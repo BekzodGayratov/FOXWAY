@@ -1,6 +1,8 @@
 import 'package:accountant/domain/client_model.dart';
-import 'package:accountant/presentation/pages/details/employe/tabs/products_tab.dart';
-import 'package:accountant/presentation/pages/details/employe/tabs/sum_tab.dart';
+import 'package:accountant/presentation/pages/details/employee/tabs/products_tab.dart';
+import 'package:accountant/presentation/pages/details/employee/tabs/sum_tab.dart';
+import 'package:accountant/presentation/pages/details/manager/tabs/products_tab.dart';
+import 'package:accountant/presentation/pages/details/manager/tabs/sum_tab.dart';
 import 'package:flutter/material.dart';
 
 class EmployeeProductDetailsPage extends StatefulWidget {
@@ -60,13 +62,13 @@ class _EmployeeProductDetailsPageState extends State<EmployeeProductDetailsPage>
             labelColor: Colors.white,
             controller: _tabController,
             tabs: const [
-              Tab(text: "Aylanma pullar"),
               Tab(text: "Tovarlar"),
+              Tab(text: "Aylanma pullar"),
             ]),
       ),
       body: TabBarView(controller: _tabController, children: [
-        EmployeeSumTab(element: widget.element),
         EmployeeProductTab(element: widget.element),
+        EmployeeSumTab(element: widget.element),
       ]),
     );
   }

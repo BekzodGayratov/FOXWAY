@@ -20,22 +20,11 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   //CONTROLLERS
-  final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _tenantNameController;
-  late final TextEditingController _productTypeController;
-  late final TextEditingController _phoneController;
-  late final TextEditingController _priceController;
-  late final TextEditingController _paidDebtController;
-  late final TextEditingController _givenDateController;
-
-  //
-  late final CollectionReference<Map<String, dynamic>> clientCollection;
 
   ///
   String title = "Foxway";
 
-  num totalSumUzs = 0.0;
-  num totalSumUsd = 0.0;
+
   @override
   void initState() {
     SystemChrome.setPreferredOrientations([
@@ -52,28 +41,7 @@ class _HomePageState extends State<HomePage> {
       title = "Xodim";
     }
 
-    clientCollection = FirebaseFirestore.instance.collection("clients");
-    _tenantNameController = TextEditingController();
-    _productTypeController = TextEditingController();
-    _priceController = TextEditingController();
-    _givenDateController = TextEditingController();
-
-    _phoneController = TextEditingController();
-    _paidDebtController = TextEditingController();
-
     super.initState();
-  }
-
-  @override
-  void dispose() {
-    _productTypeController.dispose();
-    _priceController.dispose();
-    _givenDateController.dispose();
-    _phoneController.dispose();
-    _tenantNameController.dispose();
-    _paidDebtController.dispose();
-
-    super.dispose();
   }
 
   @override
@@ -110,141 +78,34 @@ class _HomePageState extends State<HomePage> {
               FoxwayCredentials.managerEmail
           ? const ManagerScreen()
           : const EmployeeScreen(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: Colors.amber,
-        foregroundColor: Colors.white,
-        onPressed: () async {
-          await _showAddClientDialog(context);
-          setState(() {});
-        },
-        child: const Icon(Icons.add),
-      ),
     );
   }
 
-  Future<dynamic> _showAddClientDialog(BuildContext context) {
-    return showDialog(
+  void showLogoutDialog(BuildContext context) async {
+    showDialog(
         context: context,
-        builder: (ctx) {
+        builder: (context) {
           return AlertDialog(
-            title: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Mijoz qo'shish",
-                  style: TextStyle(fontSize: 18.0),
-                ),
-                IconButton(
-                    onPressed: () {
-                      _productTypeController.clear();
-                      _priceController.clear();
-                      _givenDateController.clear();
-                      _paidDebtController.clear();
-                      _phoneController.clear();
-                      _tenantNameController.clear();
-
-                      Navigator.pop(context);
-                    },
-                    icon: const Icon(Icons.cancel_outlined))
-              ],
-            ),
-            content: Padding(
-              padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 16.h),
-              child: SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: StatefulBuilder(builder: (context, setState) {
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Gap(10.h),
-                        TextFormField(
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          controller: _tenantNameController,
-                          decoration:
-                              const InputDecoration(hintText: "Mijoz ismi"),
-                          validator: (v) {
-                            if (v!.isEmpty) {
-                              return "Bo'sh qoldirmang";
-                            } else {
-                              return null;
-                            }
-                          },
-                        ),
-                        Gap(10.h),
-                        TextFormField(
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          keyboardType: TextInputType.phone,
-                          inputFormatters: [
-                            FoxTextInputFormatter.phoneNumberFormatter
-                          ],
-                          controller: _phoneController,
-                          decoration:
-                              const InputDecoration(hintText: "Telefon raqami"),
-                        ),
-                        Gap(10.h),
-                      ],
-                    );
-                  }),
-                ),
-              ),
-            ),
+            title: const Text("Haqiqatdan tizimdan chiqmoqchimisiz?"),
             actions: [
               ElevatedButton(
-                  onPressed: () async {
-                    if (_formKey.currentState!.validate()) {
-                      clientCollection.add({
-                        "client_name": _tenantNameController.text,
-                        "phone_number": _phoneController.text,
-                        "created_at": DateTime.now().toString(),
-                        "updated_at": DateTime.now().toString(),
-                        "total_sum_uzs": 0.0,
-                        "total_sum_usd": 0.0,
-                      }).then((value) {
-                        _productTypeController.clear();
-                        _priceController.clear();
-                        _givenDateController.clear();
-                        _paidDebtController.clear();
-                        _phoneController.clear();
-                        _tenantNameController.clear();
-                        setState(() {});
-                      });
-
-                      Navigator.of(ctx).pop();
-                    }
+                  onPressed: () {
+                    Navigator.of(context).pop();
                   },
-                  child: const Text("Qo'shish"))
+                  child: const Text("Yo'q")),
+              ElevatedButton(
+                  onPressed: () {
+                    FirebaseAuth.instance.signOut().then((value) =>
+                        Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const SplashScreen())));
+                  },
+                  child: const Text("Ha"))
             ],
           );
         });
   }
-}
-
-void showLogoutDialog(BuildContext context) async {
-  showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Haqiqatdan tizimdan chiqmoqchimisiz?"),
-          actions: [
-            ElevatedButton(
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-                child: const Text("Yo'q")),
-            ElevatedButton(
-                onPressed: () {
-                  FirebaseAuth.instance.signOut().then((value) =>
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => const SplashScreen())));
-                },
-                child: const Text("Ha"))
-          ],
-        );
-      });
 }
 // Container(
 //             height: 80.h,

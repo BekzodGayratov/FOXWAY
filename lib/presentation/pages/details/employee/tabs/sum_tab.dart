@@ -6,7 +6,6 @@ import 'package:accountant/domain/sum_controller.dart';
 import 'package:accountant/domain/sum_model.dart';
 import 'package:accountant/helpers/date_picker.dart';
 import 'package:accountant/helpers/input_formatters.dart';
-import 'package:accountant/helpers/show_message.dart';
 import 'package:accountant/presentation/extension/ext.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -14,15 +13,15 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
 
-class ManagerSumTab extends StatefulWidget {
+class EmployeeSumTab extends StatefulWidget {
   final ClientModel element;
-  const ManagerSumTab({super.key, required this.element});
+  const EmployeeSumTab({super.key, required this.element});
 
   @override
-  State<ManagerSumTab> createState() => _ManagerSumTabState();
+  State<EmployeeSumTab> createState() => _EmployeeSumTabState();
 }
 
-class _ManagerSumTabState extends State<ManagerSumTab>
+class _EmployeeSumTabState extends State<EmployeeSumTab>
     with TickerProviderStateMixin {
   //CONTROLLERS
   final _formKey = GlobalKey<FormState>();
@@ -111,7 +110,6 @@ class _ManagerSumTabState extends State<ManagerSumTab>
                               DataColumn(label: Text("#")),
                               DataColumn(label: Text("Pul qiymati")),
                               DataColumn(label: Text("Berilgan sana")),
-                              DataColumn(label: Text("O'chirish"))
                             ],
                             rows: List.generate(
                               sums.length,
@@ -122,7 +120,7 @@ class _ManagerSumTabState extends State<ManagerSumTab>
                                 DataCell(
                                   TextFormField(
                                     keyboardType: TextInputType.number,
-                                    readOnly: false,
+                                    readOnly: true,
                                     inputFormatters: [
                                       NumericTextFormatter(),
                                     ],
@@ -149,25 +147,6 @@ class _ManagerSumTabState extends State<ManagerSumTab>
                                             borderSide:
                                                 BorderSide(color: Colors.red)),
                                         hintText: "Berilgan pul narxi"),
-                                    onFieldSubmitted: (v) {
-                                      if (v.pickOnlyNumbers().trim() !=
-                                          sums[index]
-                                              .sum!
-                                              .sum
-                                              .toString()
-                                              .pickOnlyNumbers()
-                                              .trim()) {
-                                        sums[index] = sums[index].copyWith(
-                                          sum: Price(
-                                              sum: num.tryParse(
-                                                      v.pickOnlyNumbers()) ??
-                                                  0.0,
-                                              currency:
-                                                  sums[index].sum!.currency),
-                                        );
-                                        _updateSum(sums[index]);
-                                      }
-                                    },
                                   ),
                                 ),
                                 DataCell(
@@ -193,16 +172,6 @@ class _ManagerSumTabState extends State<ManagerSumTab>
                                         hintText: "Berilgan sana"),
                                   ),
                                 ),
-                                DataCell(ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.amber,
-                                  ),
-                                  onPressed: () {
-                                    _deleteSum(widget.element, sums, index);
-                                  },
-                                  child: const Text("O'chirish",
-                                      style: TextStyle(color: Colors.white)),
-                                )),
                               ]),
                             ),
                           ),
@@ -448,9 +417,8 @@ class _ManagerSumTabState extends State<ManagerSumTab>
           }
         }
       }
-
     }
-      SumController.totalSumUzs = totalPriceUzs;
-      SumController.totalSumUsd = totalPriceUsd;
+    SumController.totalSumUzs = totalPriceUzs;
+    SumController.totalSumUsd = totalPriceUsd;
   }
 }
