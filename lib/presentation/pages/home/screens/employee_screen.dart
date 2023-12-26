@@ -1,7 +1,8 @@
 import 'package:accountant/domain/client_model.dart';
 import 'package:accountant/helpers/input_formatters.dart';
 import 'package:accountant/presentation/extension/ext.dart';
-import 'package:accountant/presentation/pages/details/employe/employee_product_details_page.dart';
+import 'package:accountant/presentation/pages/details/employee/employee_product_details_page.dart';
+import 'package:accountant/presentation/pages/details/manager/manager_product_details_page.dart';
 import 'package:accountant/presentation/widgets/padding.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -20,17 +21,18 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
   late final TextEditingController _tenantNameController;
   late final TextEditingController _productTypeController;
   late final TextEditingController _phoneController;
+  late final TextEditingController _priceController;
   final _formKey = GlobalKey<FormState>();
 
   //
-  late Future<QuerySnapshot<Map<String, dynamic>>>? clientSnapshot;
+  late Stream<QuerySnapshot<Map<String, dynamic>>>? clientSnapshot;
   late final CollectionReference<Map<String, dynamic>> clientCollection;
-
   num totalSumUzs = 0.0;
   num totalSumUsd = 0.0;
 
   @override
   void initState() {
+    _priceController = TextEditingController();
     _tenantNameController = TextEditingController();
     _productTypeController = TextEditingController();
     _phoneController = TextEditingController();
@@ -39,7 +41,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
     clientSnapshot = FirebaseFirestore.instance
         .collection("clients")
         .orderBy("created_at")
-        .get();
+        .snapshots();
 
     super.initState();
   }
@@ -52,20 +54,10 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
     super.dispose();
   }
 
-  Future<void> refreshData() async {
-    setState(() {
-      // Reinitialize the future to trigger a rebuild
-      clientSnapshot = FirebaseFirestore.instance
-          .collection("clients")
-          .orderBy("created_at")
-          .get();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-        future: clientSnapshot,
+    return StreamBuilder(
+        stream: clientSnapshot,
         builder: (context,
             AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
           if (snapshot.hasData) {
@@ -75,25 +67,18 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
             for (var i = 0; i < snapshot.data!.docs.length; i++) {
               data[i].id = snapshot.data!.docs[i].id.toString();
             }
-            totalSumUsd = 0.0;
-            totalSumUzs = 0.0;
-            for (var i = 0; i < data.length; i++) {
-              totalSumUsd += data[i].total_sum_usd ?? 0;
-              totalSumUzs += data[i].total_sum_uzs ?? 0;
-            }
+
+            _calculateTotalSum(data);
 
             return data.isEmpty
-                ? RefreshIndicator(
-                    onRefresh: refreshData,
-                    child: Center(
-                      child: ListView(
-                        children: [
-                          Gap(100.h),
-                          const Align(
-                              alignment: Alignment.center,
-                              child: Text("Mijozlar mavjud emas")),
-                        ],
-                      ),
+                ? Center(
+                    child: ListView(
+                      children: [
+                        Gap(100.h),
+                        const Align(
+                            alignment: Alignment.center,
+                            child: Text("Mijozlar mavjud emas")),
+                      ],
                     ),
                   )
                 : Scaffold(
@@ -115,6 +100,56 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                             );
                           }),
                     ),
+                    floatingActionButtonLocation:
+                        FloatingActionButtonLocation.endFloat,
+                    floatingActionButton: FloatingActionButton(
+                      backgroundColor: Colors.amber,
+                      foregroundColor: Colors.white,
+                      onPressed: () async {
+                        await _showAddClientDialog(context);
+                        setState(() {});
+                      },
+                      child: const Icon(Icons.add),
+                    ),
+                    bottomNavigationBar: Container(
+                        height: 80.h,
+                        width: double.infinity,
+                        decoration: const BoxDecoration(
+                            color: Colors.amber,
+                            boxShadow: [
+                              BoxShadow(color: Colors.grey, blurRadius: 5.0)
+                            ]),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8.0, vertical: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text("Umumiy qoldiq:",
+                                  style: TextStyle(
+                                      fontSize: 20.0,
+                                      fontStyle: FontStyle.italic,
+                                      color: Colors.white)),
+                              SingleChildScrollView(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                  children: [
+                                    Text(
+                                        "${(totalSumUzs.abs()).toString().formatMoney()} UZS",
+                                        style: const TextStyle(
+                                            fontSize: 20.0,
+                                            color: Colors.white)),
+                                    Text(
+                                        "${(totalSumUsd.abs()).toString().formatMoney()} USD",
+                                        style: const TextStyle(
+                                            fontSize: 20.0,
+                                            color: Colors.white)),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )),
                   );
           } else if (!snapshot.hasData) {
             return const Center(
@@ -237,6 +272,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
   }
 
   Widget _buildProductItem(List<ClientModel> data, int index) {
+    final theme = Theme.of(context);
     return FoxWayPadding(
       child: Card(
         child: ListTile(
@@ -257,25 +293,27 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
             title: Text(data[index].client_name.toString(),
                 style: const TextStyle(
                     fontSize: 16.0, fontWeight: FontWeight.w500)),
-            subtitle: Text(
-              data[index].phone_number.toString(),
-              style:
-                  const TextStyle(fontSize: 16.0, fontWeight: FontWeight.w400),
+            subtitle: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text("Qoldiq:"),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                        "${(data[index].total_sum_usd!.abs()).toString().formatMoney()} USD",
+                        style: theme.textTheme.bodyMedium!.copyWith(
+                            fontSize: 16.0, fontWeight: FontWeight.w500)),
+                    Text(
+                        "${(data[index].total_sum_uzs!.abs()).toString().formatMoney()} UZS",
+                        style: theme.textTheme.bodyMedium!.copyWith(
+                            fontSize: 16.0, fontWeight: FontWeight.w500)),
+                  ],
+                )
+              ],
             ),
             trailing: PopupMenuButton(itemBuilder: (context) {
               return [
-                // PopupMenuItem(
-                //     onTap: () {
-                //       _deleteClient(data[index].id.toString(),
-                //           data[index].client_name.toString());
-                //     },
-                //     child: Row(
-                //       children: [
-                //         const Icon(Icons.delete_outline),
-                //         Gap(5.w),
-                //         const Text("O'chirish")
-                //       ],
-                //     )),
                 PopupMenuItem(
                     onTap: () {
                       _updateClient(context, data[index]);
@@ -287,31 +325,113 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                         const Text("Tahrirlash")
                       ],
                     )),
-                // PopupMenuItem(
-                //     onTap: () {
-                //       _removeMoneyToClientSum(context, data[index]);
-                //     },
-                //     child: Row(
-                //       children: [
-                //         const Icon(Icons.remove),
-                //         Gap(5.w),
-                //         const Text("Aylanma puldan ayirish")
-                //       ],
-                //     )),
-                // PopupMenuItem(
-                //     onTap: () {
-                //       _addMoneyToClientSum(context, data[index]);
-                //     },
-                //     child: Row(
-                //       children: [
-                //         const Icon(Icons.add),
-                //         Gap(5.w),
-                //         const Text("Aylanma pulga qo'shish")
-                //       ],
-                //     )),
               ];
             })),
       ),
     );
+  }
+
+  Future<dynamic> _showAddClientDialog(BuildContext context) {
+    return showDialog(
+        context: context,
+        builder: (ctx) {
+          return AlertDialog(
+            title: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  "Mijoz qo'shish",
+                  style: TextStyle(fontSize: 18.0),
+                ),
+                IconButton(
+                    onPressed: () {
+                      _productTypeController.clear();
+                      _priceController.clear();
+                      _phoneController.clear();
+                      _tenantNameController.clear();
+
+                      Navigator.pop(context);
+                    },
+                    icon: const Icon(Icons.cancel_outlined))
+              ],
+            ),
+            content: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 15.w, vertical: 16.h),
+              child: SingleChildScrollView(
+                child: Form(
+                  key: _formKey,
+                  child: StatefulBuilder(builder: (context, setState) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Gap(10.h),
+                        TextFormField(
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          controller: _tenantNameController,
+                          decoration:
+                              const InputDecoration(hintText: "Mijoz ismi"),
+                          validator: (v) {
+                            if (v!.isEmpty) {
+                              return "Bo'sh qoldirmang";
+                            } else {
+                              return null;
+                            }
+                          },
+                        ),
+                        Gap(10.h),
+                        TextFormField(
+                          autovalidateMode: AutovalidateMode.onUserInteraction,
+                          keyboardType: TextInputType.phone,
+                          inputFormatters: [
+                            FoxTextInputFormatter.phoneNumberFormatter
+                          ],
+                          controller: _phoneController,
+                          decoration:
+                              const InputDecoration(hintText: "Telefon raqami"),
+                        ),
+                        Gap(10.h),
+                      ],
+                    );
+                  }),
+                ),
+              ),
+            ),
+            actions: [
+              ElevatedButton(
+                  onPressed: () async {
+                    if (_formKey.currentState!.validate()) {
+                      clientCollection.add({
+                        "client_name": _tenantNameController.text,
+                        "phone_number": _phoneController.text,
+                        "created_at": DateTime.now().toString(),
+                        "updated_at": DateTime.now().toString(),
+                        "total_sum_uzs": 0.0,
+                        "total_sum_usd": 0.0,
+                      }).then((value) {
+                        _productTypeController.clear();
+                        _priceController.clear();
+                        _phoneController.clear();
+                        _tenantNameController.clear();
+                        setState(() {});
+                      });
+
+                      Navigator.of(ctx).pop();
+                    }
+                  },
+                  child: const Text("Qo'shish"))
+            ],
+          );
+        });
+  }
+
+  Future<void> _calculateTotalSum(List<ClientModel> clients) async {
+    if (clients.isNotEmpty) {
+      totalSumUzs = 0.0;
+      totalSumUsd = 0.0;
+      for (var element in clients) {
+        totalSumUzs += element.total_sum_uzs!.abs();
+        totalSumUsd += element.total_sum_usd!.abs();
+      }
+    }
   }
 }

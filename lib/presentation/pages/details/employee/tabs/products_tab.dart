@@ -4,7 +4,6 @@ import 'package:accountant/domain/product_model.dart';
 import 'package:accountant/domain/sum_controller.dart';
 import 'package:accountant/helpers/date_picker.dart';
 import 'package:accountant/helpers/input_formatters.dart';
-import 'package:accountant/helpers/show_message.dart';
 import 'package:accountant/presentation/extension/ext.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -30,13 +29,14 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
   late final TextEditingController _givenDateController;
   late String _currency;
 
-  late Future<QuerySnapshot<Map<String, dynamic>>>? productsSnapshot;
+  late Stream<QuerySnapshot<Map<String, dynamic>>>? productsSnapshot;
   late final CollectionReference<Map<String, dynamic>> productsCollection;
   late final CollectionReference<Map<String, dynamic>> clientCollection;
 
   //
   double totalPriceUzs = 0.0;
   double totalPriceUsd = 0.0;
+  List<ProductModel> prods = [];
 
   @override
   void setState(VoidCallback fn) {
@@ -57,7 +57,7 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
         .doc(widget.element.id)
         .collection('products')
         .orderBy("created_at")
-        .get();
+        .snapshots();
 
     _currency = "usd";
 
@@ -79,23 +79,11 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
     super.dispose();
   }
 
-  Future<void> refreshData() async {
-    setState(() {
-      // Reinitialize the future to trigger a rebuild
-      productsSnapshot = FirebaseFirestore.instance
-          .collection("clients")
-          .doc(widget.element.id)
-          .collection('products')
-          .orderBy("created_at")
-          .get();
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FutureBuilder(
-          future: productsSnapshot,
+      body: StreamBuilder(
+          stream: productsSnapshot,
           builder: (context,
               AsyncSnapshot<QuerySnapshot<Map<String, dynamic>>> snapshot) {
             if (snapshot.hasData) {
@@ -105,25 +93,11 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
               for (var i = 0; i < snapshot.data!.docs.length; i++) {
                 products[i].id = snapshot.data!.docs[i].id.toString();
               }
-      
-              WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-                _calculateTotalPaidMoney(products);
-              });
-      
+
+              _calculateTotalPaidMoney(products);
+
               return products.isEmpty
-                  ? RefreshIndicator(
-                      onRefresh: refreshData,
-                      child: Center(
-                        child: ListView(
-                          children: [
-                            Gap(100.h),
-                            const Align(
-                                alignment: Alignment.center,
-                                child: Text("Mahsulotlar mavjud emas")),
-                          ],
-                        ),
-                      ),
-                    )
+                  ? const Center(child: Text("Mahsulotlar mavjud emas"))
                   : Scaffold(
                       body: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
@@ -133,8 +107,8 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                             headingTextStyle: const TextStyle(
                                 color: Colors.black,
                                 fontWeight: FontWeight.w600),
-                            border: TableBorder.all(
-                                color: const Color(0xffF2F4F7)),
+                            border:
+                                TableBorder.all(color: const Color(0xffF2F4F7)),
                             columns: const [
                               DataColumn(label: Text("#")),
                               DataColumn(label: Text("Tovarlari")),
@@ -151,7 +125,6 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                 ),
                                 DataCell(
                                   TextFormField(
-                                    readOnly: true,
                                     initialValue:
                                         products[index].product_type ?? '',
                                     decoration: const InputDecoration(
@@ -165,22 +138,22 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                             borderSide: BorderSide(
                                                 color: Colors.transparent)),
                                         errorBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.red)),
+                                            borderSide:
+                                                BorderSide(color: Colors.red)),
                                         hintText: "Mahsulot turi"),
-                                    // onFieldSubmitted: (v) {
-                                    //   if (v.trim() !=
-                                    //       products[index]
-                                    //           .product_type!
-                                    //           .toString()
-                                    //           .trim()) {
-                                    //     products[index] =
-                                    //         products[index].copyWith(
-                                    //       product_type: v,
-                                    //     );
-                                    //     _updateProduct(products[index]);
-                                    //   }
-                                    // },
+                                    onFieldSubmitted: (v) {
+                                      if (v.trim() !=
+                                          products[index]
+                                              .product_type!
+                                              .toString()
+                                              .trim()) {
+                                        products[index] =
+                                            products[index].copyWith(
+                                          product_type: v,
+                                        );
+                                        _updateProduct(products[index]);
+                                      }
+                                    },
                                   ),
                                 ),
                                 DataCell(
@@ -196,48 +169,24 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                         .toString()
                                         .formatMoney(),
                                     decoration: InputDecoration(
-                                        suffix: Text(products[index]
-                                                    .price!
-                                                    .currency ==
-                                                "usd"
-                                            ? "USD "
-                                            : "SO'M "),
+                                        suffix: Text(
+                                            products[index].price!.currency ==
+                                                    "usd"
+                                                ? "USD "
+                                                : "SO'M "),
                                         border: const OutlineInputBorder(
                                             borderSide: BorderSide(
                                                 color: Colors.transparent)),
                                         enabledBorder: const OutlineInputBorder(
                                             borderSide: BorderSide(
                                                 color: Colors.transparent)),
-                                        focusedBorder:
-                                            const OutlineInputBorder(
-                                                borderSide: BorderSide(
-                                                    color:
-                                                        Colors.transparent)),
+                                        focusedBorder: const OutlineInputBorder(
+                                            borderSide: BorderSide(
+                                                color: Colors.transparent)),
                                         errorBorder: const OutlineInputBorder(
                                             borderSide:
                                                 BorderSide(color: Colors.red)),
                                         hintText: "Mahsulot narxi"),
-                                    // onFieldSubmitted: (v) {
-                                    //   if (v.pickOnlyNumbers().trim() !=
-                                    //       products[index]
-                                    //           .price!
-                                    //           .sum
-                                    //           .toString()
-                                    //           .pickOnlyNumbers()
-                                    //           .trim()) {
-                                    //     products[index] =
-                                    //         products[index].copyWith(
-                                    //       price: Price(
-                                    //           sum: num.tryParse(
-                                    //                   v.pickOnlyNumbers()) ??
-                                    //               0.0,
-                                    //           currency: products[index]
-                                    //               .price!
-                                    //               .currency),
-                                    //     );
-                                    //     _updateProduct(products[index]);
-                                    //   }
-                                    // },
                                   ),
                                 ),
                                 DataCell(
@@ -264,14 +213,14 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                         border: const UnderlineInputBorder(
                                             borderSide: BorderSide(
                                                 color: Colors.transparent)),
-                                        enabledBorder: const UnderlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
+                                        enabledBorder:
+                                            const UnderlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Colors.transparent)),
                                         focusedBorder:
                                             const UnderlineInputBorder(
                                                 borderSide: BorderSide(
-                                                    color:
-                                                        Colors.transparent)),
+                                                    color: Colors.transparent)),
                                         errorBorder: const UnderlineInputBorder(
                                             borderSide:
                                                 BorderSide(color: Colors.red)),
@@ -304,8 +253,8 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                           products[index] =
                                               products[index].copyWith(
                                             paid_money: Price(
-                                                sum: num.tryParse(v
-                                                        .pickOnlyNumbers()) ??
+                                                sum: num.tryParse(
+                                                        v.pickOnlyNumbers()) ??
                                                     0.0),
                                           );
                                           _updateProduct(products[index]);
@@ -320,9 +269,7 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                     keyboardType: TextInputType.number,
                                     autovalidateMode:
                                         AutovalidateMode.onUserInteraction,
-                                    initialValue: (products[index]
-                                                .price!
-                                                .sum! -
+                                    initialValue: (products[index].price!.sum! -
                                             products[index].paid_money!.sum!)
                                         .toString()
                                         .formatMoney(),
@@ -337,14 +284,14 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                         border: const UnderlineInputBorder(
                                             borderSide: BorderSide(
                                                 color: Colors.transparent)),
-                                        enabledBorder: const UnderlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.transparent)),
+                                        enabledBorder:
+                                            const UnderlineInputBorder(
+                                                borderSide: BorderSide(
+                                                    color: Colors.transparent)),
                                         focusedBorder:
                                             const UnderlineInputBorder(
                                                 borderSide: BorderSide(
-                                                    color:
-                                                        Colors.transparent)),
+                                                    color: Colors.transparent)),
                                         errorBorder: const UnderlineInputBorder(
                                             borderSide:
                                                 BorderSide(color: Colors.red)),
@@ -371,8 +318,8 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                             borderSide: BorderSide(
                                                 color: Colors.transparent)),
                                         errorBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.red)),
+                                            borderSide:
+                                                BorderSide(color: Colors.red)),
                                         hintText: "Berilgan sana"),
                                   ),
                                 ),
@@ -393,8 +340,7 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8.0, vertical: 8.0),
                             child: Row(
-                              mainAxisAlignment:
-                                  MainAxisAlignment.spaceBetween,
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 const Text("Umumiy qoldiq:",
                                     style: TextStyle(
@@ -403,16 +349,15 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                         color: Colors.white)),
                                 SingleChildScrollView(
                                   child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.end,
+                                    crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
-                                          "${((SumController.totalSumUzs - totalPriceUzs) / 10).toString().pickOnlyNumbers().formatMoney()} UZS",
+                                          "${(SumController.totalSumUzs - totalPriceUzs).abs().toString().formatMoney()} UZS",
                                           style: const TextStyle(
                                               fontSize: 20.0,
                                               color: Colors.white)),
                                       Text(
-                                          "${((SumController.totalSumUsd - totalPriceUsd) / 10).toString().pickOnlyNumbers().formatMoney()} USD",
+                                          "${(SumController.totalSumUsd - totalPriceUsd).abs().toString().formatMoney()} USD",
                                           style: const TextStyle(
                                               fontSize: 20.0,
                                               color: Colors.white)),
@@ -689,19 +634,20 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
             (element.price!.sum ?? 0.0) - (element.paid_money!.sum ?? 0.0);
       }
     }
-
-    setState(() {});
+    final updatedClient = widget.element.copyWith(
+        total_sum_usd: SumController.totalSumUsd - totalPriceUsd,
+        total_sum_uzs: SumController.totalSumUzs - totalPriceUzs);
+    _updateClient(updatedClient);
   }
 
-  // Future<void> _updateClient(ClientModel updatedClient) async {
-
-  //   await clientCollection.doc(widget.element.id).update({
-  //     "client_name": updatedClient.client_name,
-  //     "phone_number": updatedClient.phone_number ?? "",
-  //     "total_sum_uzs": updatedClient.total_sum_uzs,
-  //     "total_sum_usd": updatedClient.total_sum_usd,
-  //     "created_at": updatedClient.created_at.toString(),
-  //     "updated_at": DateTime.now().toString(),
-  //   });
-  // }
+  Future<void> _updateClient(ClientModel updatedClient) async {
+    await clientCollection.doc(widget.element.id).update({
+      "client_name": updatedClient.client_name,
+      "phone_number": updatedClient.phone_number ?? "",
+      "total_sum_uzs": updatedClient.total_sum_uzs,
+      "total_sum_usd": updatedClient.total_sum_usd,
+      "created_at": updatedClient.created_at.toString(),
+      "updated_at": DateTime.now().toString(),
+    });
+  }
 }

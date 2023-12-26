@@ -24,7 +24,6 @@ class ClientModel {
     this.total_sum_usd,
   });
 
-
   ClientModel copyWith({
     String? id,
     String? client_name,
@@ -63,49 +62,30 @@ class ClientModel {
   factory ClientModel.fromMap(Map<String, dynamic> map) {
     return ClientModel(
       id: map['id'] != null ? map['id'] as String : null,
-      client_name: map['client_name'] != null ? map['client_name'] as String : null,
-      given_date: map['given_date'] != null ? map['given_date'] as String : null,
-      phone_number: map['phone_number'] != null ? map['phone_number'] as String : null,
-      created_at: map['created_at'] != null ? map['created_at'] as String : null,
-      updated_at: map['updated_at'] != null ? map['updated_at'] as String : null,
-      total_sum_uzs: map['total_sum_uzs'] != null ? map['total_sum_uzs'] as num : null,
-      total_sum_usd: map['total_sum_usd'] != null ? map['total_sum_usd'] as num : null,
+      client_name:
+          map['client_name'] != null ? map['client_name'] as String : null,
+      given_date:
+          map['given_date'] != null ? map['given_date'] as String : null,
+      phone_number:
+          map['phone_number'] != null ? map['phone_number'] as String : null,
+      created_at:
+          map['created_at'] != null ? map['created_at'] as String : null,
+      updated_at:
+          map['updated_at'] != null ? map['updated_at'] as String : null,
+      total_sum_uzs:
+          map['total_sum_uzs'] != null ? map['total_sum_uzs'] as num : null,
+      total_sum_usd:
+          map['total_sum_usd'] != null ? map['total_sum_usd'] as num : null,
     );
   }
 
   String toJson() => json.encode(toMap());
 
-  factory ClientModel.fromJson(String source) => ClientModel.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory ClientModel.fromJson(String source) =>
+      ClientModel.fromMap(json.decode(source) as Map<String, dynamic>);
 
   @override
   String toString() {
     return 'ClientModel(id: $id, client_name: $client_name, given_date: $given_date, phone_number: $phone_number, created_at: $created_at, updated_at: $updated_at, total_sum_uzs: $total_sum_uzs, total_sum_usd: $total_sum_usd)';
-  }
-
-  @override
-  bool operator ==(covariant ClientModel other) {
-    if (identical(this, other)) return true;
-  
-    return 
-      other.id == id &&
-      other.client_name == client_name &&
-      other.given_date == given_date &&
-      other.phone_number == phone_number &&
-      other.created_at == created_at &&
-      other.updated_at == updated_at &&
-      other.total_sum_uzs == total_sum_uzs &&
-      other.total_sum_usd == total_sum_usd;
-  }
-
-  @override
-  int get hashCode {
-    return id.hashCode ^
-      client_name.hashCode ^
-      given_date.hashCode ^
-      phone_number.hashCode ^
-      created_at.hashCode ^
-      updated_at.hashCode ^
-      total_sum_uzs.hashCode ^
-      total_sum_usd.hashCode;
   }
 }
