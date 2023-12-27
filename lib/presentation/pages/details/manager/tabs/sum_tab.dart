@@ -1,15 +1,15 @@
-// ignore_for_file: unnecessary_null_comparison
-
+// ignore_for_file: unnecessary_null_comparison, non_constant_identifier_names
+import 'dart:async';
 import 'package:accountant/domain/client_model.dart';
 import 'package:accountant/domain/price_model.dart';
-import 'package:accountant/domain/sum_controller.dart';
+import 'package:accountant/domain/product_model.dart';
 import 'package:accountant/domain/sum_model.dart';
 import 'package:accountant/helpers/date_picker.dart';
 import 'package:accountant/helpers/input_formatters.dart';
-import 'package:accountant/helpers/show_message.dart';
 import 'package:accountant/presentation/extension/ext.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
@@ -33,17 +33,14 @@ class _ManagerSumTabState extends State<ManagerSumTab>
   late Stream<QuerySnapshot<Map<String, dynamic>>> sumSnapshot;
   late final CollectionReference<Map<String, dynamic>> sumCollection;
   late final CollectionReference<Map<String, dynamic>> clientCollection;
+  late final Future<QuerySnapshot<Map<String, dynamic>>> productsCollection;
+
+  List<ProductModel> products = [];
+  List<FocusNode> _focusNodes = [];
 
   //
-  double totalPriceUzs = 0.0;
-  double totalPriceUsd = 0.0;
-
-  @override
-  void setState(VoidCallback fn) {
-    if (mounted) {
-      super.setState(fn);
-    }
-  }
+  int totalSumUzs = 0;
+  int totalSumUsd = 0;
 
   @override
   void initState() {
@@ -60,6 +57,12 @@ class _ManagerSumTabState extends State<ManagerSumTab>
         .collection('sums')
         .orderBy("given_date")
         .snapshots();
+    productsCollection = FirebaseFirestore.instance
+        .collection("clients")
+        .doc(widget.element.id)
+        .collection('products')
+        .orderBy('created_at')
+        .get();
 
     _currency = "usd";
 
@@ -71,6 +74,7 @@ class _ManagerSumTabState extends State<ManagerSumTab>
 
   @override
   void dispose() {
+    _updateTotalStatusOfClient();
     _priceController.dispose();
     _givenDateController.dispose();
 
@@ -93,7 +97,11 @@ class _ManagerSumTabState extends State<ManagerSumTab>
               }
 
               _calculateTotalPaidMoney(sums);
-
+              _focusNodes = List.generate(
+                  sums.length,
+                  (index) => _focusNodes.length > index
+                      ? _focusNodes[index]
+                      : FocusNode());
               return sums.isEmpty
                   ? const Center(child: Text("Summalar mavjud emas"))
                   : Scaffold(
@@ -121,6 +129,7 @@ class _ManagerSumTabState extends State<ManagerSumTab>
                                 ),
                                 DataCell(
                                   TextFormField(
+                                    focusNode: _focusNodes[index],
                                     keyboardType: TextInputType.number,
                                     readOnly: false,
                                     inputFormatters: [
@@ -198,7 +207,10 @@ class _ManagerSumTabState extends State<ManagerSumTab>
                                     backgroundColor: Colors.amber,
                                   ),
                                   onPressed: () {
-                                    _deleteSum(widget.element, sums, index);
+                                    _deleteSum(widget.element, sums, index)
+                                        .then((value) {
+                                      _updateTotalStatusOfClient();
+                                    });
                                   },
                                   child: const Text("O'chirish",
                                       style: TextStyle(color: Colors.white)),
@@ -232,12 +244,12 @@ class _ManagerSumTabState extends State<ManagerSumTab>
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
-                                          "${(totalPriceUzs).toString().formatMoney()} UZS",
+                                          "${(totalSumUzs).toString().formatMoney()} UZS",
                                           style: const TextStyle(
                                               fontSize: 20.0,
                                               color: Colors.white)),
                                       Text(
-                                          "${totalPriceUsd.toString().formatMoney()} USD",
+                                          "${totalSumUsd.toString().formatMoney()} USD",
                                           style: const TextStyle(
                                               fontSize: 20.0,
                                               color: Colors.white)),
@@ -376,6 +388,7 @@ class _ManagerSumTabState extends State<ManagerSumTab>
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
                       _postSum().then((value) {
+                        _updateTotalStatusOfClient();
                         _priceController.clear();
                         _givenDateController.clear();
                       });
@@ -437,20 +450,48 @@ class _ManagerSumTabState extends State<ManagerSumTab>
 
   Future<void> _calculateTotalPaidMoney(List<SumModel> sums) async {
     if (sums.isNotEmpty) {
-      totalPriceUzs = 0.0;
-      totalPriceUsd = 0.0;
+      totalSumUzs = 0;
+      totalSumUsd = 0;
       for (var element in sums) {
         if (element.sum != null) {
           if (element.sum!.currency == "sum") {
-            totalPriceUzs += element.sum!.sum ?? 0;
+            totalSumUzs += element.sum!.sum!.toInt();
           } else {
-            totalPriceUsd += element.sum!.sum ?? 0;
+            totalSumUsd += element.sum!.sum!.toInt();
           }
         }
       }
-
     }
-      SumController.totalSumUzs = totalPriceUzs;
-      SumController.totalSumUsd = totalPriceUsd;
+  }
+
+  void _updateTotalStatusOfClient() async {
+    final res = await productsCollection;
+
+    final sums = res.docs.map((e) => ProductModel.fromMap(e.data())).toList();
+
+    int uzs = 0;
+    int usd = 0;
+
+    for (var element in sums) {
+      if (element.price!.currency == "sum") {
+        uzs += element.price!.sum!.toInt();
+      } else {
+        usd += element.price!.sum!.toInt();
+      }
+    }
+
+    _updateClient(widget.element.copyWith(
+        total_sum_usd: usd - totalSumUsd, total_sum_uzs: uzs - totalSumUzs));
+  }
+
+  Future<void> _updateClient(ClientModel updatedClient) async {
+    await clientCollection.doc(widget.element.id).update({
+      "client_name": updatedClient.client_name,
+      "phone_number": updatedClient.phone_number ?? "",
+      "total_sum_uzs": updatedClient.total_sum_uzs,
+      "total_sum_usd": updatedClient.total_sum_usd,
+      "created_at": updatedClient.created_at.toString(),
+      "updated_at": DateTime.now().toString(),
+    });
   }
 }

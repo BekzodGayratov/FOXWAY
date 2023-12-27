@@ -7,6 +7,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get_storage/get_storage.dart';
 
@@ -28,6 +29,7 @@ void main() async {
     webProvider: ReCaptchaV3Provider(kWebRecaptchaSiteKey),
   );
   await GetStorage.init();
+  EasyLoading.init();
 
   runApp(MultiBlocProvider(providers: [
     BlocProvider(create: (context) => LoginCubit()),
@@ -44,8 +46,10 @@ class MyApp extends StatelessWidget {
     ]);
     return ScreenUtilInit(
       builder: (context, child) {
-        return const MaterialApp(
-            debugShowCheckedModeBanner: false, home: SplashScreen());
+        return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            home: const SplashScreen(),
+            builder: EasyLoading.init());
       },
       designSize: const Size(378, 815),
     );

@@ -1,12 +1,15 @@
+import 'dart:async';
+
 import 'package:accountant/domain/client_model.dart';
 import 'package:accountant/domain/price_model.dart';
 import 'package:accountant/domain/product_model.dart';
-import 'package:accountant/domain/sum_controller.dart';
+import 'package:accountant/domain/sum_model.dart';
 import 'package:accountant/helpers/date_picker.dart';
 import 'package:accountant/helpers/input_formatters.dart';
 import 'package:accountant/presentation/extension/ext.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 import 'package:intl/intl.dart';
@@ -32,10 +35,12 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
   late Stream<QuerySnapshot<Map<String, dynamic>>>? productsSnapshot;
   late final CollectionReference<Map<String, dynamic>> productsCollection;
   late final CollectionReference<Map<String, dynamic>> clientCollection;
+  late final Future<QuerySnapshot<Map<String, dynamic>>> sumCollection;
 
   //
-  double totalPriceUzs = 0.0;
-  double totalPriceUsd = 0.0;
+
+  int totalSumUzs = 0;
+  int totalSumUsd = 0;
   List<ProductModel> prods = [];
 
   @override
@@ -59,6 +64,13 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
         .orderBy("created_at")
         .snapshots();
 
+    sumCollection = FirebaseFirestore.instance
+        .collection("clients")
+        .doc(widget.element.id)
+        .collection('sums')
+        .orderBy("given_date")
+        .get();
+
     _currency = "usd";
 
     _productTypeController = TextEditingController();
@@ -72,6 +84,7 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
 
   @override
   void dispose() {
+    _updateTotalStatusOfClient();
     _productTypeController.dispose();
     _priceController.dispose();
     _givenDateController.dispose();
@@ -94,7 +107,7 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                 products[i].id = snapshot.data!.docs[i].id.toString();
               }
 
-              _calculateTotalPaidMoney(products);
+              _calculateTotalPrice(products);
 
               return products.isEmpty
                   ? const Center(child: Text("Mahsulotlar mavjud emas"))
@@ -116,6 +129,7 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                               DataColumn(label: Text("To'landi")),
                               DataColumn(label: Text("Qoldiq")),
                               DataColumn(label: Text("Berilgan sana")),
+                              DataColumn(label: Text("O'chirish"))
                             ],
                             rows: List.generate(
                               products.length,
@@ -159,7 +173,7 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                 DataCell(
                                   TextFormField(
                                     keyboardType: TextInputType.number,
-                                    readOnly: true,
+                                    readOnly: false,
                                     inputFormatters: [
                                       NumericTextFormatter(),
                                     ],
@@ -187,6 +201,27 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                             borderSide:
                                                 BorderSide(color: Colors.red)),
                                         hintText: "Mahsulot narxi"),
+                                    onFieldSubmitted: (v) {
+                                      if (v.pickOnlyNumbers().trim() !=
+                                          products[index]
+                                              .price!
+                                              .sum
+                                              .toString()
+                                              .pickOnlyNumbers()
+                                              .trim()) {
+                                        products[index] =
+                                            products[index].copyWith(
+                                          price: Price(
+                                              sum: num.tryParse(
+                                                      v.pickOnlyNumbers()) ??
+                                                  0.0,
+                                              currency: products[index]
+                                                  .price!
+                                                  .currency),
+                                        );
+                                        _updateProduct(products[index]);
+                                      }
+                                    },
                                   ),
                                 ),
                                 DataCell(
@@ -323,6 +358,20 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                         hintText: "Berilgan sana"),
                                   ),
                                 ),
+                                DataCell(ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.amber,
+                                  ),
+                                  onPressed: () {
+                                    _deleteProduct(
+                                            widget.element, products, index)
+                                        .then((value) {
+                                      _updateTotalStatusOfClient();
+                                    });
+                                  },
+                                  child: const Text("O'chirish",
+                                      style: TextStyle(color: Colors.white)),
+                                )),
                               ]),
                             ),
                           ),
@@ -352,12 +401,12 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                     crossAxisAlignment: CrossAxisAlignment.end,
                                     children: [
                                       Text(
-                                          "${(SumController.totalSumUzs - totalPriceUzs).abs().toString().formatMoney()} UZS",
+                                          "${totalSumUzs.abs().toString().formatMoney()} UZS",
                                           style: const TextStyle(
                                               fontSize: 20.0,
                                               color: Colors.white)),
                                       Text(
-                                          "${(SumController.totalSumUsd - totalPriceUsd).abs().toString().formatMoney()} USD",
+                                          "${totalSumUsd.abs().toString().formatMoney()} USD",
                                           style: const TextStyle(
                                               fontSize: 20.0,
                                               color: Colors.white)),
@@ -590,6 +639,39 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
         });
   }
 
+  void _calculateTotalPrice(List<ProductModel> products) {
+    totalSumUsd = 0;
+    totalSumUzs = 0;
+    for (var element in products) {
+      if (element.price!.currency == "sum") {
+        totalSumUzs += element.price!.sum!.toInt();
+      } else {
+        totalSumUsd += element.price!.sum!.toInt();
+      }
+    }
+  }
+
+  void _updateTotalStatusOfClient() async {
+    final res = await sumCollection;
+
+    final sums = res.docs.map((e) => SumModel.fromMap(e.data())).toList();
+
+    int uzs = 0;
+    int usd = 0;
+
+    for (var element in sums) {
+      if (element.sum!.currency == "sum") {
+        uzs += element.sum!.sum!.toInt();
+      } else {
+        usd += element.sum!.sum!.toInt();
+      }
+    }
+    totalSumUsd -= usd;
+    totalSumUzs -= uzs;
+    _updateClient(widget.element
+        .copyWith(total_sum_usd: totalSumUsd, total_sum_uzs: totalSumUzs));
+  }
+
   void _updateProduct(ProductModel product) {
     productsCollection.doc(product.id).update({
       "product_type": product.product_type,
@@ -601,7 +683,9 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
               currency: product.paid_money!.currency)
           .toMap(),
       "given_date": product.given_date.toString(),
-      "created_at": product.created_at.toString()
+      "created_at": product.created_at.toString(),
+      "total_trade_sum_usd": product.total_trade_sum_usd,
+      "total_trade_sum_uzs": product.total_trade_sum_uzs,
     });
   }
 
@@ -618,26 +702,10 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
               currency: _currency.toLowerCase())
           .toMap(),
       "given_date": _givenDateController.text,
-      "created_at": DateTime.now().toString()
+      "created_at": DateTime.now().toString(),
+      "total_trade_sum_usd": 0,
+      "total_trade_sum_uzs": 0,
     });
-  }
-
-  void _calculateTotalPaidMoney(List<ProductModel> products) {
-    totalPriceUzs = 0.0;
-    totalPriceUsd = 0.0;
-    for (var element in products) {
-      if (element.paid_money!.currency == "sum") {
-        totalPriceUzs +=
-            (element.price!.sum ?? 0.0) - (element.paid_money!.sum ?? 0.0);
-      } else {
-        totalPriceUsd +=
-            (element.price!.sum ?? 0.0) - (element.paid_money!.sum ?? 0.0);
-      }
-    }
-    final updatedClient = widget.element.copyWith(
-        total_sum_usd: SumController.totalSumUsd - totalPriceUsd,
-        total_sum_uzs: SumController.totalSumUzs - totalPriceUzs);
-    _updateClient(updatedClient);
   }
 
   Future<void> _updateClient(ClientModel updatedClient) async {

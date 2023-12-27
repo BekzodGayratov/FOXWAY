@@ -2,7 +2,6 @@ import 'package:accountant/domain/client_model.dart';
 import 'package:accountant/helpers/input_formatters.dart';
 import 'package:accountant/presentation/extension/ext.dart';
 import 'package:accountant/presentation/pages/details/employee/employee_product_details_page.dart';
-import 'package:accountant/presentation/pages/details/manager/manager_product_details_page.dart';
 import 'package:accountant/presentation/widgets/padding.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -412,7 +411,6 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                         _priceController.clear();
                         _phoneController.clear();
                         _tenantNameController.clear();
-                        setState(() {});
                       });
 
                       Navigator.of(ctx).pop();

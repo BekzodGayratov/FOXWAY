@@ -1,15 +1,11 @@
-import 'package:accountant/domain/client_model.dart';
 import 'package:accountant/domain/foxway_credentials.dart';
-import 'package:accountant/helpers/input_formatters.dart';
 import 'package:accountant/presentation/pages/home/screens/employee_screen.dart';
 import 'package:accountant/presentation/pages/home/screens/manager_screen.dart';
 import 'package:accountant/presentation/pages/splash_screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:gap/gap.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,7 +19,6 @@ class _HomePageState extends State<HomePage> {
 
   ///
   String title = "Foxway";
-
 
   @override
   void initState() {

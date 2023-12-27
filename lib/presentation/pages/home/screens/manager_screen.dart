@@ -70,15 +70,22 @@ class _ManagerScreenState extends State<ManagerScreen> {
             _calculateTotalSum(data);
 
             return data.isEmpty
-                ? Center(
-                    child: ListView(
-                      children: [
-                        Gap(100.h),
-                        const Align(
-                            alignment: Alignment.center,
-                            child: Text("Mijozlar mavjud emas")),
-                      ],
-                    ),
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Center(child: Text("Mijozlar mavjud emas")),
+                      Gap(50.h),
+                      FloatingActionButton(
+                        backgroundColor: Colors.amber,
+                        foregroundColor: Colors.white,
+                        onPressed: () async {
+                          await _showAddClientDialog(context);
+                          setState(() {});
+                        },
+                        child: const Icon(Icons.add),
+                      ),
+                    ],
                   )
                 : Scaffold(
                     body: Padding(
@@ -449,7 +456,6 @@ class _ManagerScreenState extends State<ManagerScreen> {
                         _priceController.clear();
                         _phoneController.clear();
                         _tenantNameController.clear();
-                        setState(() {});
                       });
 
                       Navigator.of(ctx).pop();

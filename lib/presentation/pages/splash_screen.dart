@@ -14,7 +14,8 @@ class SplashScreen extends StatefulWidget {
 class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
-    Future.delayed(const Duration(seconds: 2)).then((value) => checkUser());
+    Future.delayed(const Duration(seconds: 2))
+        .then((value) => checkUserAuthentication());
     super.initState();
   }
 
@@ -30,18 +31,34 @@ class _SplashScreenState extends State<SplashScreen> {
     );
   }
 
-  void checkUser() {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const PasswordPage()),
-          (route) => false);
-    } else {
-      Navigator.pushAndRemoveUntil(
+  // void checkUser() {
+  //   final user = FirebaseAuth.instance.currentUser;
+  //   if (user != null) {
+  //     Navigator.pushAndRemoveUntil(
+  //         context,
+  //         MaterialPageRoute(builder: (context) => const PasswordPage()),
+  //         (route) => false);
+  //   } else {
+  //     Navigator.pushAndRemoveUntil(
+  //         context,
+  //         MaterialPageRoute(builder: (context) => const LoginPage()),
+  //         (route) => false);
+  //   }
+  // }
+  void checkUserAuthentication() {
+     FirebaseAuth.instance.authStateChanges().listen((event) {
+      if (event != null) {
+        Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (context) => const PasswordPage()),
+            (route) => false);
+      } else {
+             Navigator.pushAndRemoveUntil(
           context,
           MaterialPageRoute(builder: (context) => const LoginPage()),
           (route) => false);
     }
+    
+    });
   }
 }

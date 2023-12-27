@@ -1,12 +1,11 @@
 import 'package:accountant/application/login/login_cubit.dart';
-import 'package:accountant/helpers/show_message.dart';
-import 'package:accountant/presentation/pages/home/home_page.dart';
 import 'package:accountant/presentation/pages/set_password/set_password_page.dart';
 import 'package:accountant/presentation/pages/password_page.dart';
 import 'package:accountant/presentation/widgets/loading.dart';
 import 'package:accountant/presentation/widgets/padding.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
 
@@ -34,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
     return BlocConsumer<LoginCubit, LoginState>(
       listener: (context, state) {
         state.whenOrNull(
-            error: (err) => showFoxMessage(err),
+            error: (err) =>  EasyLoading.showError(err),
             success: () => Navigator.pushAndRemoveUntil(
                 context,
                 MaterialPageRoute(
