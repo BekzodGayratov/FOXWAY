@@ -71,14 +71,22 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
 
             return data.isEmpty
                 ? Center(
-                    child: ListView(
-                      children: [
-                        Gap(100.h),
-                        const Align(
-                            alignment: Alignment.center,
-                            child: Text("Mijozlar mavjud emas")),
-                      ],
-                    ),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text("Mijozlar mavjud emas"),
+                          Gap(10.h),
+                          FloatingActionButton(
+                            backgroundColor: Colors.amber,
+                            foregroundColor: Colors.white,
+                            onPressed: () async {
+                              await _showAddClientDialog(context);
+                              setState(() {});
+                            },
+                            child: const Icon(Icons.add),
+                          ),
+                        ]),
                   )
                 : Scaffold(
                     body: Padding(
@@ -321,7 +329,7 @@ class _EmployeeScreenState extends State<EmployeeScreen> {
                       children: [
                         const Icon(Icons.edit_outlined),
                         Gap(5.w),
-                        const Text("Tahrirlash")
+                        const Text("O'zgartirish")
                       ],
                     )),
               ];

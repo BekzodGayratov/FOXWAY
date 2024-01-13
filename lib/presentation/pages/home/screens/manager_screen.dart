@@ -366,7 +366,7 @@ class _ManagerScreenState extends State<ManagerScreen> {
                       children: [
                         const Icon(Icons.edit_outlined),
                         Gap(5.w),
-                        const Text("Tahrirlash")
+                        const Text("O'zgartish")
                       ],
                     )),
               ];

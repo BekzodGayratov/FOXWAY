@@ -129,7 +129,6 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                               DataColumn(label: Text("To'landi")),
                               DataColumn(label: Text("Qoldiq")),
                               DataColumn(label: Text("Berilgan sana")),
-                              DataColumn(label: Text("O'chirish"))
                             ],
                             rows: List.generate(
                               products.length,
@@ -173,7 +172,7 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                 DataCell(
                                   TextFormField(
                                     keyboardType: TextInputType.number,
-                                    readOnly: false,
+                                    readOnly: true,
                                     inputFormatters: [
                                       NumericTextFormatter(),
                                     ],
@@ -201,27 +200,6 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                             borderSide:
                                                 BorderSide(color: Colors.red)),
                                         hintText: "Mahsulot narxi"),
-                                    onFieldSubmitted: (v) {
-                                      if (v.pickOnlyNumbers().trim() !=
-                                          products[index]
-                                              .price!
-                                              .sum
-                                              .toString()
-                                              .pickOnlyNumbers()
-                                              .trim()) {
-                                        products[index] =
-                                            products[index].copyWith(
-                                          price: Price(
-                                              sum: num.tryParse(
-                                                      v.pickOnlyNumbers()) ??
-                                                  0.0,
-                                              currency: products[index]
-                                                  .price!
-                                                  .currency),
-                                        );
-                                        _updateProduct(products[index]);
-                                      }
-                                    },
                                   ),
                                 ),
                                 DataCell(
@@ -358,20 +336,6 @@ class _EmployeeProductTabState extends State<EmployeeProductTab>
                                         hintText: "Berilgan sana"),
                                   ),
                                 ),
-                                DataCell(ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.amber,
-                                  ),
-                                  onPressed: () {
-                                    _deleteProduct(
-                                            widget.element, products, index)
-                                        .then((value) {
-                                      _updateTotalStatusOfClient();
-                                    });
-                                  },
-                                  child: const Text("O'chirish",
-                                      style: TextStyle(color: Colors.white)),
-                                )),
                               ]),
                             ),
                           ),

@@ -118,7 +118,6 @@ class _EmployeeSumTabState extends State<EmployeeSumTab>
                               DataColumn(label: Text("#")),
                               DataColumn(label: Text("Pul qiymati")),
                               DataColumn(label: Text("Berilgan sana")),
-                              DataColumn(label: Text("O'chirish"))
                             ],
                             rows: List.generate(
                               sums.length,
@@ -130,7 +129,7 @@ class _EmployeeSumTabState extends State<EmployeeSumTab>
                                   TextFormField(
                                     focusNode: _focusNodes[index],
                                     keyboardType: TextInputType.number,
-                                    readOnly: false,
+                                    readOnly: true,
                                     inputFormatters: [
                                       NumericTextFormatter(),
                                     ],
@@ -157,25 +156,6 @@ class _EmployeeSumTabState extends State<EmployeeSumTab>
                                             borderSide:
                                                 BorderSide(color: Colors.red)),
                                         hintText: "Berilgan pul narxi"),
-                                    onFieldSubmitted: (v) {
-                                      if (v.pickOnlyNumbers().trim() !=
-                                          sums[index]
-                                              .sum!
-                                              .sum
-                                              .toString()
-                                              .pickOnlyNumbers()
-                                              .trim()) {
-                                        sums[index] = sums[index].copyWith(
-                                          sum: Price(
-                                              sum: num.tryParse(
-                                                      v.pickOnlyNumbers()) ??
-                                                  0.0,
-                                              currency:
-                                                  sums[index].sum!.currency),
-                                        );
-                                        _updateSum(sums[index]);
-                                      }
-                                    },
                                   ),
                                 ),
                                 DataCell(
@@ -201,19 +181,6 @@ class _EmployeeSumTabState extends State<EmployeeSumTab>
                                         hintText: "Berilgan sana"),
                                   ),
                                 ),
-                                DataCell(ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.amber,
-                                  ),
-                                  onPressed: () {
-                                    _deleteSum(widget.element, sums, index)
-                                        .then((value) {
-                                      _updateTotalStatusOfClient();
-                                    });
-                                  },
-                                  child: const Text("O'chirish",
-                                      style: TextStyle(color: Colors.white)),
-                                )),
                               ]),
                             ),
                           ),

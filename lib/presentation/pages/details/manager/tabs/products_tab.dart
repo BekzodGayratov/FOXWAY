@@ -70,7 +70,6 @@ class _ManagerProductTabState extends State<ManagerProductTab>
         .collection('sums')
         .orderBy("given_date")
         .get();
-
     _currency = "usd";
 
     _productTypeController = TextEditingController();
@@ -666,8 +665,10 @@ class _ManagerProductTabState extends State<ManagerProductTab>
         usd += element.sum!.sum!.toInt();
       }
     }
+
     totalSumUsd -= usd;
     totalSumUzs -= uzs;
+
     _updateClient(widget.element
         .copyWith(total_sum_usd: totalSumUsd, total_sum_uzs: totalSumUzs));
   }

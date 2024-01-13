@@ -33,7 +33,7 @@ class _HomePageState extends State<HomePage> {
         FoxwayCredentials.managerEmail) {
       title = "Boshqaruvchi";
     } else {
-      title = "Xodim";
+      title = "FOXWAY";
     }
 
     super.initState();

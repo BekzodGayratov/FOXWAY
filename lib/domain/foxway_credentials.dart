@@ -1,8 +1,8 @@
 class FoxwayCredentials {
-  static String managerEmail = "foxwaymanager@gmail.com";
-  static String managerPassword = "98765432111_foxway_manager";
+  static String managerEmail = "axmadullohsobitov@gmail.com";
+  static String managerPassword = "15271209262165An";
 
   //
-  static String employeeEmail = "foxwayemployee@gmail.com";
-  static String employeePassword = "foxway_employee_2239999";
+  static String employeeEmail = "sobitovaxmadulloh@gmail.com";
+  static String employeePassword = "15271209262165An";
 }
